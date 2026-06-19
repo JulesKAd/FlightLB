@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carnet de Vol - Minimaliste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Minimalist scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+        
+        /* Custom form inputs */
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; transition: 0.2s; }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+        .tab-active { color: #111827; border-bottom: 2px solid #111827; font-weight: 500; }
+        .tab-inactive { color: #6b7280; border-bottom: 2px solid transparent; }
+        .tab-inactive:hover { color: #374151; }
+        
+        /* Bar chart animations */
+        .bar-grow { animation: growUp 0.8s ease-out forwards; transform-origin: bottom; }
+        @keyframes growUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col selection:bg-gray-200">
+
+    <!-- Navbar Minimaliste -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-airplane text-2xl text-gray-900"></i>
+                    <span class="font-semibold tracking-tight text-lg">AeroLog</span>
+                </div>
+                <div class="flex items-center space-x-6 text-sm">
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-5 transition-colors tab-active">
+                        Tableau de bord
+                    </button>
+                    <button onclick="switchTab('logbook')" id="tab-logbook" class="py-5 transition-colors tab-inactive">
+                        Carnet
+                    </button>
+                    <button onclick="switchTab('expenses')" id="tab-expenses" class="py-5 transition-colors tab-inactive">
+                        Dépenses
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-6 lg:px-8 py-10 relative">
+        
+        <!-- ==================== DASHBOARD VIEW ==================== -->
+        <div id="view-dashboard" class="space-y-8">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-semibold tracking-tight">Bonjour, Pilote.</h1>
+                    <p class="text-gray-500 text-sm mt-1">Résumé de votre activité aéronautique.</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <!-- Import Input -->
+                    <input type="file" id="import-file" accept=".csv" class="hidden" multiple onchange="handleImport(event)">
+                    <button onclick="document.getElementById('import-file').click()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="ph ph-upload-simple"></i>
+                        Importer CSV
+                    </button>
+                    <button onclick="exportCSV()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="ph ph-download-simple"></i>
+                        Sauvegarder
+                    </button>
+                    <button onclick="switchTab('logbook'); openAddFlightModal()" class="bg-gray-900 text-white hover:bg-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                        <i class="ph ph-plus"></i>
+                        Nouveau vol
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Stats & Period Setup -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- GLOBALS -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cumul Global (Depuis le début)</span>
+                        <i class="ph ph-globe text-gray-300 text-xl"></i>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-xs text-gray-500 mb-1">Heures Totales</span>
+                            <span id="stat-total-hours" class="text-3xl font-light tracking-tight text-indigo-600">00:00</span>
+                        </div>
+                        <div class="border-l border-gray-100 pl-4">
+                            <span class="block text-xs text-gray-500 mb-1">Investissement Total</span>
+                            <span id="stat-global-total" class="text-3xl font-semibold tracking-tight text-gray-900">0 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERIOD (Activity) -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Activité</span>
+                            <select id="activity-span-selector" onchange="renderApp()" class="text-xs font-medium bg-gray-50 border border-gray-200 text-gray-700 rounded-md px-2 py-1 outline-none cursor-pointer hover:bg-gray-100">
+                                <option value="1">1 mois</option>
+                                <option value="6">6 mois</option>
+                                <option value="12">1 an</option>
+                            </select>
+                        </div>
+                        <button onclick="openSettingsModal()" class="text-gray-400 hover:text-gray-900 transition-colors" title="Paramètres de limite">
+                            <i class="ph ph-faders text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <span id="label-activity-hours" class="block text-xs text-gray-500 mb-1">Heures</span>
+                            <span id="stat-period-hours" class="text-2xl font-light tracking-tight">00:00</span>
+                        </div>
+                        <div class="border-l border-gray-100 pl-4">
+                            <span id="label-activity-expenses" class="block text-xs text-gray-500 mb-1">Dépenses</span>
+                            <span id="stat-period-total" class="text-2xl font-medium tracking-tight text-gray-900">0 €</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between text-[10px] text-gray-500 mb-1.5 uppercase tracking-wide">
+                            <span><span id="label-activity-budget">Budget mensuel</span> (<span id="stat-period-limit">0</span> €)</span>
+                            <span id="budget-percentage" class="font-bold">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                            <div id="budget-progress-bar" class="bg-gray-900 h-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                        <!-- Alert box -->
+                        <div id="budget-alert" class="hidden mt-3 text-red-600 text-xs flex items-center gap-1.5">
+                            <i class="ph-fill ph-warning-circle"></i>
+                            <span>Limite budgétaire dépassée.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart & Prorogation -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- CHART -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm lg:col-span-2 flex flex-col overflow-hidden">
+                    <div class="flex justify-between items-center mb-6 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-sm font-medium text-gray-900">Évolution</h2>
+                            <select id="chart-span-selector" onchange="renderChart()" class="text-xs font-medium bg-gray-50 border border-gray-200 text-gray-700 rounded-md px-2 py-0.5 outline-none cursor-pointer hover:bg-gray-100">
+                                <option value="6">6 mois</option>
+                                <option value="12">1 an</option>
+                                <option value="24">2 ans</option>
+                                <option value="all">Depuis le début</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-3 text-xs hidden sm:flex">
+                            <span class="flex items-center gap-1 text-gray-500"><div class="w-2 h-2 bg-indigo-400 rounded-full"></div> Heures</span>
+                            <span class="flex items-center gap-1 text-gray-500"><div class="w-2 h-2 bg-emerald-400 rounded-full"></div> Dépenses</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto pb-2 flex-grow scroll-smooth">
+                        <div id="chart-container" class="h-48 flex items-end justify-between gap-1 pt-4 border-t border-gray-50 min-w-[300px]">
+                            <!-- Chart Bars injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROROGATION -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+                    <div class="mb-5">
+                        <h2 class="text-sm font-medium text-gray-900">Prorogation SEP</h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Période : <span id="proro-date-range" class="text-gray-600">--</span></p>
+                    </div>
+                    
+                    <div class="space-y-4 flex-grow">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs"><span class="text-gray-500">Total (12h)</span><span id="proro-hours-text" class="font-medium">00:00 / 12h</span></div>
+                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-hours-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs"><span class="text-gray-500">Dont CdB (6h)</span><span id="proro-pic-text" class="font-medium">00:00 / 6h</span></div>
+                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-pic-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs"><span class="text-gray-500">Atterrissages (12)</span><span id="proro-ldgs-text" class="font-medium">0 / 12</span></div>
+                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-ldgs-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs"><span class="text-gray-500">Instructeur (1h)</span><span id="proro-inst-text" class="font-medium">00:00 / 1h</span></div>
+                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-inst-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLEET STATS -->
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-sm font-medium text-gray-900">Flotte & Appareils</h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Vos heures de vol et atterrissages par immatriculation.</p>
+                    </div>
+                    <i class="ph ph-airplane-tilt text-gray-300 text-xl"></i>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead>
+                            <tr class="border-b border-gray-100 bg-gray-50/50">
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Immat.</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Modèle</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-right">Heures (Totales)</th>
+                                <th class="py-3 px-4 text-xs font-semibold text-gray-500 uppercase text-right">Touchés</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fleet-stats-list" class="divide-y divide-gray-50">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==================== LOGBOOK VIEW ==================== -->
+        <div id="view-logbook" class="hidden space-y-6">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-2xl font-semibold tracking-tight">Carnet de Vol</h1>
+                </div>
+                <button onclick="openAddFlightModal()" class="text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors">
+                    Nouveau vol
+                </button>
+            </div>
+
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <!-- min-w-max force the table to never cut its content horizontally -->
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead>
+                            <tr class="bg-gray-50/80">
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Appareil</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ATO / Cat.</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trajet</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Temps</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Touchés</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Cond.</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Fonction</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Instructeur</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Coût</th>
+                                <th class="py-4 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-flights-list" class="divide-y divide-gray-50">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                    <div id="empty-state-flights" class="hidden py-16 text-center text-gray-400 text-sm">
+                        Aucun vol enregistré.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== EXPENSES VIEW ==================== -->
+        <div id="view-expenses" class="hidden space-y-6">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-2xl font-semibold tracking-tight">Dépenses Personnelles</h1>
+                    <p class="text-gray-500 text-sm mt-1">Vos virements au club et vos achats matériels.</p>
+                </div>
+                <button onclick="openAddExpenseModal()" class="text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors">
+                    Saisir une dépense
+                </button>
+            </div>
+
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <!-- min-w-max force the table to never cut its content horizontally -->
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead>
+                            <tr class="bg-gray-50/80">
+                                <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                                <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">ATO / Catégorie</th>
+                                <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Montant</th>
+                                <th class="py-4 px-6 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-expenses-list" class="divide-y divide-gray-50">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                    <div id="empty-state-expenses" class="hidden py-16 text-center text-gray-400 text-sm">
+                        Aucune dépense enregistrée.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Floating Scroll Navigation Buttons -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-[60]">
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Remonter" class="bg-white/90 backdrop-blur border border-gray-200 text-gray-700 p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors flex items-center justify-center">
+            <i class="ph ph-caret-up text-lg"></i>
+        </button>
+        <button onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Descendre" class="bg-white/90 backdrop-blur border border-gray-200 text-gray-700 p-2.5 rounded-full shadow-md hover:bg-gray-100 transition-colors flex items-center justify-center">
+            <i class="ph ph-caret-down text-lg"></i>
+        </button>
+    </div>
+
+    <!-- Toast Notification (Centered bottom to not overlap scroll buttons) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-xl transform transition-transform duration-300 translate-y-24 opacity-0 flex items-center gap-3 z-[70]">
+        <i class="ph-fill ph-check-circle text-emerald-400 text-xl"></i>
+        <span id="toast-message" class="text-sm font-medium">Action réussie</span>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Import Config Modal -->
+    <div id="modal-import-config" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl max-h-[90vh]">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
+                <h3 class="font-medium text-lg">Configuration de l'import</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-5 overflow-y-auto">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Nom de l'ATO / Aéroclub</label>
+                    <input type="text" id="import-ato-name" placeholder="Ex: Aéroclub de France" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Format des heures du CSV</label>
+                    <select id="import-time-format" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        <option value="decimal">Décimal (ex: 1.5 = 1h30)</option>
+                        <option value="normal">Normal (ex: 1.50 = 1h50)</option>
+                    </select>
+                </div>
+                <div class="mt-8 flex justify-end gap-3 pt-2">
+                    <button onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button onclick="confirmImport()" class="bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Lancer l'import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Flight Modal -->
+    <div id="modal-flight" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl flex flex-col shadow-xl max-h-[95vh]">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
+                <h3 id="modal-flight-title" class="font-medium text-lg">Enregistrer un vol</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            
+            <form id="form-add-flight" onsubmit="saveFlight(event)" class="p-6 space-y-6 overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Date</label>
+                        <input type="date" id="flight-date" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">ATO / Aéroclub</label>
+                        <input type="text" id="flight-ato" placeholder="Nom du club" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Immatriculation</label>
+                        <input type="text" id="flight-reg" required placeholder="F-..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm uppercase transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Type (Avion)</label>
+                        <input type="text" id="flight-type" required placeholder="DR400, C152..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm uppercase transition-colors outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Catégorie</label>
+                        <input list="flight-categories" id="flight-category" required placeholder="PPL, CPL..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        <datalist id="flight-categories">
+                            <option value="PPL">
+                            <option value="CPL">
+                            <option value="IFR">
+                            <option value="Mûrissement">
+                            <option value="Prorogation">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Départ (OACI)</label>
+                        <input type="text" id="flight-dep" required placeholder="LFPN" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm uppercase transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Arrivée (OACI)</label>
+                        <input type="text" id="flight-arr" required placeholder="LFPT" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm uppercase transition-colors outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Temps (HH:MM)</label>
+                        <input type="text" id="flight-duration" required placeholder="01:30" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Atterrissages</label>
+                        <input type="number" id="flight-landings" step="1" min="1" value="1" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Conditions</label>
+                        <select id="flight-condition" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                            <option value="Jour">Jour</option>
+                            <option value="Nuit">Nuit</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Coût déduit (€)</label>
+                        <input type="number" id="flight-cost" step="0.01" min="0" required placeholder="150" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Fonction à bord</label>
+                        <select id="flight-function" onchange="toggleInstructorField()" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                            <option value="CdB">Commandant de Bord (CdB)</option>
+                            <option value="EP">Élève Pilote (EP) / DC</option>
+                        </select>
+                    </div>
+                    <div id="instructor-container" class="hidden">
+                        <label class="block text-xs text-gray-500 mb-1.5">Nom de l'instructeur</label>
+                        <input type="text" id="flight-instructor" placeholder="Nom complet" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 shrink-0">
+                    <button type="button" onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Expense Modal -->
+    <div id="modal-expense" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-xl max-h-[90vh]">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
+                <h3 id="modal-expense-title" class="font-medium text-lg">Saisir une dépense perso</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            
+            <form id="form-add-expense" onsubmit="saveExpense(event)" class="p-6 space-y-5 overflow-y-auto">
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Date</label>
+                        <input type="date" id="expense-date" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">ATO / Lié à</label>
+                        <input type="text" id="expense-ato" placeholder="Ex: Club" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">Description</label>
+                    <input type="text" id="expense-title" required placeholder="Ex: Virement aéroclub, Casque..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Catégorie</label>
+                        <select id="expense-category" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                            <option value="Apport Aéroclub">Apport Aéroclub (Virement/CB)</option>
+                            <option value="Matériel">Matériel</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Montant (€)</label>
+                        <input type="number" id="expense-cost" step="0.01" min="1" required placeholder="200" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 shrink-0">
+                    <button type="button" onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings / Budget Modal -->
+    <div id="modal-budget" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md flex flex-col shadow-xl max-h-[90vh]">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
+                <h3 class="font-medium text-lg">Paramètres</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            
+            <form id="form-budget" onsubmit="saveSettings(event)" class="p-6 space-y-6 overflow-y-auto">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">Limite de dépenses mensuelle (€)</label>
+                    <input type="number" id="monthly-limit-input" step="10" min="0" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-3 text-base transition-colors outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5">Date d'obtention SEP</label>
+                    <input type="date" id="sep-date-input" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-3 text-base transition-colors outline-none">
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 shrink-0">
+                    <button type="button" onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Application -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- State Management ---
+        let state = {
+            monthlyLimit: 300,
+            sepDate: '2024-05-15',
+            flights: [],
+            purchases: [],
+            selectedMonth: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
+            editingFlightId: null,
+            editingExpenseId: null
+        };
+        
+        let tempImportData = null; 
+        
+        // --- Firebase Globals ---
+        let db, auth, currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'aerolog-app';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                await initFirebase();
+            } else {
+                renderApp();
+            }
+        });
+
+        // --- Firebase Initialization & Sync ---
+        async function initFirebase() {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch(e) {
+                console.error("Auth error", e);
+            }
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    await loadDataFromFirestore();
+                } else {
+                    currentUser = null;
+                    renderApp(); 
+                }
+            });
+        }
+
+        async function loadDataFromFirestore() {
+            if (!currentUser || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'appData', 'state');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    state.flights = data.flights ? JSON.parse(data.flights) : [];
+                    state.purchases = data.purchases ? JSON.parse(data.purchases) : [];
+                    state.monthlyLimit = data.monthlyLimit || 300;
+                    state.sepDate = data.sepDate || '2024-05-15';
+                }
+                renderApp();
+            } catch (e) {
+                console.error("Error loading data", e);
+                renderApp();
+            }
+        }
+
+        async function saveDataToFirestore() {
+            if (!currentUser || !db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'appData', 'state');
+                await setDoc(docRef, {
+                    flights: JSON.stringify(state.flights),
+                    purchases: JSON.stringify(state.purchases),
+                    monthlyLimit: state.monthlyLimit,
+                    sepDate: state.sepDate
+                });
+            } catch (e) {
+                console.error("Error saving data", e);
+            }
+        }
+
+        // --- Navigation ---
+        window.switchTab = function(tabId) {
+            document.getElementById('tab-dashboard').className = `py-5 transition-colors ${tabId === 'dashboard' ? 'tab-active' : 'tab-inactive'}`;
+            document.getElementById('tab-logbook').className = `py-5 transition-colors ${tabId === 'logbook' ? 'tab-active' : 'tab-inactive'}`;
+            document.getElementById('tab-expenses').className = `py-5 transition-colors ${tabId === 'expenses' ? 'tab-active' : 'tab-inactive'}`;
+            
+            document.getElementById('view-dashboard').classList.toggle('hidden', tabId !== 'dashboard');
+            document.getElementById('view-logbook').classList.toggle('hidden', tabId !== 'logbook');
+            document.getElementById('view-expenses').classList.toggle('hidden', tabId !== 'expenses');
+        }
+
+        // --- Core Rendering Logic ---
+        window.renderApp = function() {
+            state.flights.sort((a, b) => new Date(b.date) - new Date(a.date));
+            state.purchases.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Globals
+            let totalHours = 0;
+            state.flights.forEach(f => totalHours += parseFloat(f.duration));
+            document.getElementById('stat-total-hours').textContent = formatTime(totalHours);
+            
+            let globalTotal = 0;
+            state.purchases.forEach(p => globalTotal += parseFloat(p.cost));
+            document.getElementById('stat-global-total').textContent = globalTotal.toFixed(0) + ' €';
+
+            // Period (Activity) processing
+            const activitySpan = parseInt(document.getElementById('activity-span-selector').value) || 1;
+            const today = new Date();
+            const currentMonthStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+            
+            // Calculate start month based on span
+            let startMonthObj = new Date(today.getFullYear(), today.getMonth() - activitySpan + 1, 1);
+            let startMonthStr = startMonthObj.getFullYear() + '-' + String(startMonthObj.getMonth() + 1).padStart(2, '0');
+
+            let periodClubDeposits = 0;
+            let periodOtherPurchases = 0;
+            let periodHours = 0;
+
+            state.purchases.forEach(p => {
+                const pMonth = p.date.slice(0, 7);
+                if (pMonth >= startMonthStr && pMonth <= currentMonthStr) {
+                    if (p.category.includes('Apport') || p.category.includes('Bourse') || p.title.toLowerCase().includes('virement')) {
+                        periodClubDeposits += parseFloat(p.cost);
+                    } else {
+                        periodOtherPurchases += parseFloat(p.cost);
+                    }
+                }
+            });
+            
+            state.flights.forEach(f => {
+                const fMonth = f.date.slice(0, 7);
+                if(fMonth >= startMonthStr && fMonth <= currentMonthStr) {
+                    periodHours += parseFloat(f.duration);
+                }
+            });
+
+            let periodTotal = periodClubDeposits + periodOtherPurchases;
+            let periodLimit = state.monthlyLimit * activitySpan;
+
+            document.getElementById('stat-period-hours').textContent = formatTime(periodHours);
+            document.getElementById('stat-period-total').textContent = periodTotal.toFixed(0) + ' €';
+            document.getElementById('stat-period-limit').textContent = periodLimit;
+            
+            // Dynamic Labels
+            document.getElementById('label-activity-hours').textContent = activitySpan === 1 ? "Heures (Ce mois)" : `Heures (${activitySpan} mois)`;
+            document.getElementById('label-activity-expenses').textContent = activitySpan === 1 ? "Dépenses (Ce mois)" : `Dépenses (${activitySpan} mois)`;
+            document.getElementById('label-activity-budget').textContent = activitySpan === 1 ? "Budget mensuel" : "Budget sur la période";
+
+            // Budget Progress
+            let budgetPercentage = periodLimit > 0 ? (periodTotal / periodLimit) * 100 : 0;
+            let clampedPercentage = Math.min(budgetPercentage, 100);
+            
+            const progressBar = document.getElementById('budget-progress-bar');
+            const alertBox = document.getElementById('budget-alert');
+            
+            document.getElementById('budget-percentage').textContent = `${budgetPercentage.toFixed(0)}%`;
+            progressBar.style.width = `${clampedPercentage}%`;
+
+            if (budgetPercentage > 100) {
+                progressBar.className = "bg-red-500 h-full transition-all duration-700 ease-out";
+                alertBox.classList.remove('hidden');
+            } else if (budgetPercentage > 85) {
+                progressBar.className = "bg-amber-400 h-full transition-all duration-700 ease-out";
+                alertBox.classList.add('hidden');
+            } else {
+                progressBar.className = "bg-gray-900 h-full transition-all duration-700 ease-out";
+                alertBox.classList.add('hidden');
+            }
+
+            renderChart();
+            renderProrogation();
+            renderFleetStats();
+            renderFullLogbook();
+            renderExpenses();
+        }
+
+        window.renderFleetStats = function() {
+            const tbody = document.getElementById('fleet-stats-list');
+            tbody.innerHTML = '';
+            
+            if(state.flights.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-xs text-gray-400">Aucune donnée.</td></tr>`;
+                return;
+            }
+
+            const fleet = {};
+            state.flights.forEach(f => {
+                if (!fleet[f.reg]) {
+                    fleet[f.reg] = { reg: f.reg, type: f.type, duration: 0, landings: 0 };
+                }
+                if (f.type !== 'A DÉFINIR' && f.type !== '') {
+                    fleet[f.reg].type = f.type;
+                }
+                fleet[f.reg].duration += parseFloat(f.duration);
+                fleet[f.reg].landings += parseInt(f.landings) || 0;
+            });
+
+            const fleetArr = Object.values(fleet).sort((a, b) => b.duration - a.duration);
+
+            fleetArr.forEach(ac => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="py-3 px-4 font-medium text-gray-900 text-sm">${ac.reg}</td>
+                        <td class="py-3 px-4 text-gray-500 text-sm">${ac.type || '-'}</td>
+                        <td class="py-3 px-4 text-right font-medium text-indigo-600 text-sm">${formatTime(ac.duration)}</td>
+                        <td class="py-3 px-4 text-right text-gray-600 text-sm">${ac.landings}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        window.renderChart = function() {
+            const container = document.getElementById('chart-container');
+            const spanSelect = document.getElementById('chart-span-selector');
+            let span = spanSelect ? spanSelect.value : '6';
+            
+            container.innerHTML = '';
+            const months = [];
+            const d = new Date();
+            const currentMonthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            
+            if (span === 'all') {
+                let earliest = currentMonthStr; 
+                let allDates = [...state.purchases, ...state.flights].map(x => x.date.slice(0, 7)).sort();
+                if (allDates.length > 0) earliest = allDates[0];
+                
+                let current = earliest;
+                while (current <= currentMonthStr) {
+                    months.push(current);
+                    let [y, m] = current.split('-');
+                    let nextD = new Date(parseInt(y), parseInt(m), 1); 
+                    current = nextD.getFullYear() + '-' + String(nextD.getMonth() + 1).padStart(2, '0');
+                }
+                span = months.length;
+            } else {
+                span = parseInt(span);
+                for(let i = span - 1; i >= 0; i--) {
+                    const tempD = new Date(d.getFullYear(), d.getMonth() - i, 1);
+                    months.push(tempD.getFullYear() + '-' + String(tempD.getMonth() + 1).padStart(2, '0'));
+                }
+            }
+            
+            // Allow horizontal scroll for large spans
+            container.style.minWidth = span > 12 ? (span * 35) + 'px' : '100%';
+            
+            const chartData = {};
+            let maxCost = 0;
+            let maxHours = 0;
+            
+            months.forEach(m => { chartData[m] = { cost: 0, hours: 0 }; });
+            
+            state.purchases.forEach(p => {
+                const m = p.date.slice(0, 7);
+                if(chartData[m]) chartData[m].cost += parseFloat(p.cost);
+            });
+            state.flights.forEach(f => {
+                const m = f.date.slice(0, 7);
+                if(chartData[m]) chartData[m].hours += parseFloat(f.duration);
+            });
+            
+            months.forEach(m => {
+                if(chartData[m].cost > maxCost) maxCost = chartData[m].cost;
+                if(chartData[m].hours > maxHours) maxHours = chartData[m].hours;
+            });
+            
+            // Render Bars
+            months.forEach(m => {
+                const data = chartData[m];
+                const hPercent = maxHours > 0 ? (data.hours / maxHours) * 100 : 0;
+                const cPercent = maxCost > 0 ? (data.cost / maxCost) * 100 : 0;
+                
+                let dateObj = new Date(m + '-01');
+                let monthName = dateObj.toLocaleDateString('fr-FR', {month: span > 12 ? 'narrow' : 'short'});
+                
+                if (span > 12 && dateObj.getMonth() === 0) {
+                     monthName = dateObj.getFullYear().toString();
+                }
+                
+                container.innerHTML += `
+                    <div class="flex flex-col items-center gap-2 w-full h-full justify-end group">
+                        <div class="flex items-end justify-center gap-[2px] w-full h-full">
+                            <div class="w-1/2 bg-indigo-400 rounded-t-sm bar-grow hover:opacity-80 transition-opacity" style="height: ${hPercent}%;" title="${m} : ${formatTime(data.hours)}"></div>
+                            <div class="w-1/2 bg-emerald-400 rounded-t-sm bar-grow hover:opacity-80 transition-opacity" style="height: ${cPercent}%;" title="${m} : ${data.cost.toFixed(0)} €"></div>
+                        </div>
+                        <span class="text-[10px] text-gray-400 uppercase w-full text-center truncate" title="${m}">${monthName}</span>
+                    </div>
+                `;
+            });
+        }
+
+        window.renderProrogation = function() {
+            if (!state.sepDate) return;
+            const sepDateObj = new Date(state.sepDate);
+            const today = new Date(); 
+            
+            let expiryDate = new Date(sepDateObj);
+            while (expiryDate <= today) {
+                expiryDate.setFullYear(expiryDate.getFullYear() + 2);
+            }
+            
+            const startDate = new Date(expiryDate);
+            startDate.setFullYear(startDate.getFullYear() - 1);
+
+            document.getElementById('proro-date-range').textContent = `${formatDate(startDate)} - ${formatDate(expiryDate)}`;
+
+            let hours12 = 0, hoursPic = 0, landings = 0, hoursInst = 0;
+            state.flights.forEach(f => {
+                const fDate = new Date(f.date);
+                if (fDate >= startDate && fDate <= expiryDate) {
+                    hours12 += f.duration;
+                    landings += f.landings || 0;
+                    if (f.function === 'CdB') hoursPic += f.duration;
+                    if (f.function === 'EP') hoursInst += f.duration;
+                }
+            });
+
+            updateProgress('proro-hours', hours12, 12, true);
+            updateProgress('proro-pic', hoursPic, 6, true);
+            updateProgress('proro-ldgs', landings, 12, false);
+            updateProgress('proro-inst', hoursInst, 1, true);
+        }
+
+        window.updateProgress = function(idPrefix, current, max, isTime = true) {
+            const bar = document.getElementById(`${idPrefix}-bar`);
+            const text = document.getElementById(`${idPrefix}-text`);
+            let percentage = (current / max) * 100;
+            let clamped = Math.min(percentage, 100);
+            
+            if(isTime) {
+                text.textContent = `${formatTime(current)} / ${max}h`;
+            } else {
+                text.textContent = `${current} / ${max}`;
+            }
+            
+            bar.style.width = `${clamped}%`;
+            bar.className = percentage >= 100 ? "bg-gray-900 h-full transition-all duration-700" : "bg-gray-300 h-full transition-all duration-700";
+        }
+
+        window.renderFullLogbook = function() {
+            const tbody = document.getElementById('full-flights-list');
+            const emptyState = document.getElementById('empty-state-flights');
+            tbody.innerHTML = '';
+
+            if(state.flights.length === 0) {
+                emptyState.classList.remove('hidden');
+                tbody.parentElement.classList.add('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+            }
+
+            let currentYear = '';
+
+            state.flights.forEach(f => {
+                const fYear = f.date.substring(0, 4);
+                
+                // Grouping by Year
+                if (fYear !== currentYear) {
+                    let yearHours = 0;
+                    let yearCost = 0;
+                    state.flights.forEach(fy => {
+                        if(fy.date.substring(0,4) === fYear) {
+                            yearHours += parseFloat(fy.duration);
+                            yearCost += parseFloat(fy.cost);
+                        }
+                    });
+                    
+                    tbody.innerHTML += `
+                        <tr class="bg-gray-100/70 border-y border-gray-200">
+                            <td colspan="11" class="py-2 px-4">
+                                <div class="flex justify-between items-center w-full">
+                                    <span class="font-bold text-gray-800 text-sm">${fYear}</span>
+                                    <span class="text-xs text-gray-500 font-medium">
+                                        Total : ${formatTime(yearHours)} &nbsp;&bull;&nbsp; ${yearCost > 0 ? yearCost.toFixed(2) + ' €' : '0 €'}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    currentYear = fYear;
+                }
+
+                const funcDisplay = f.function === 'EP' 
+                    ? `<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">EP</span>` 
+                    : `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">CdB</span>`;
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 transition-colors text-sm">
+                        <td class="py-4 px-4 text-gray-500 whitespace-nowrap">${formatDate(f.date)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <span class="font-medium text-gray-900">${f.reg}</span>
+                            <span class="text-gray-400 ml-1 text-xs">(${f.type})</span>
+                        </td>
+                        <td class="py-4 px-4 whitespace-nowrap text-gray-600 text-xs">
+                            ${f.ato ? `<span class="block font-medium text-gray-800">${f.ato}</span>` : ''}
+                            ${f.category || '-'}
+                        </td>
+                        <td class="py-4 px-4 whitespace-nowrap text-gray-600">${f.dep} &rarr; ${f.arr}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center font-medium text-gray-900">${formatTime(f.duration)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center text-gray-600">${f.landings}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center">
+                            ${f.condition === 'Nuit' ? '<i class="ph-fill ph-moon text-indigo-400" title="Nuit"></i>' : '<i class="ph-fill ph-sun text-amber-400" title="Jour"></i>'}
+                        </td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center">${funcDisplay}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center text-gray-500 text-xs">${f.instructor || '-'}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-right text-gray-500">${f.cost > 0 ? f.cost.toFixed(2) + ' €' : '-'}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openAddFlightModal('${f.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Modifier">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                <button onclick="deleteFlight('${f.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Supprimer">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.renderExpenses = function() {
+            const tbody = document.getElementById('full-expenses-list');
+            const emptyState = document.getElementById('empty-state-expenses');
+            tbody.innerHTML = '';
+
+            if(state.purchases.length === 0) {
+                emptyState.classList.remove('hidden');
+                tbody.parentElement.classList.add('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                tbody.parentElement.classList.remove('hidden');
+            }
+
+            let currentYear = '';
+
+            state.purchases.forEach(p => {
+                const pYear = p.date.substring(0, 4);
+                
+                // Grouping by Year
+                if (pYear !== currentYear) {
+                    let yearCost = 0;
+                    state.purchases.forEach(py => {
+                        if(py.date.substring(0,4) === pYear) {
+                            yearCost += parseFloat(py.cost);
+                        }
+                    });
+                    
+                    tbody.innerHTML += `
+                        <tr class="bg-gray-100/70 border-y border-gray-200">
+                            <td colspan="5" class="py-2 px-6">
+                                <div class="flex justify-between items-center w-full">
+                                    <span class="font-bold text-gray-800 text-sm">${pYear}</span>
+                                    <span class="text-xs text-gray-500 font-medium">Total : ${yearCost.toFixed(2)} €</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    currentYear = pYear;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 transition-colors text-sm">
+                        <td class="py-4 px-6 text-gray-500 whitespace-nowrap">${formatDate(p.date)}</td>
+                        <td class="py-4 px-6 font-medium text-gray-900">${p.title}</td>
+                        <td class="py-4 px-6 text-gray-500 text-xs">
+                            ${p.ato ? `<span class="block font-medium text-gray-800">${p.ato}</span>` : ''}
+                            <span class="px-2 py-0.5 mt-1 inline-block bg-gray-100 rounded-md text-xs">${p.category}</span>
+                        </td>
+                        <td class="py-4 px-6 text-right text-gray-900 whitespace-nowrap font-medium">${p.cost.toFixed(2)} €</td>
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-3">
+                                <button onclick="openAddExpenseModal('${p.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Modifier">
+                                    <i class="ph ph-pencil-simple"></i>
+                                </button>
+                                <button onclick="deleteExpense('${p.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Supprimer">
+                                    <i class="ph ph-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- Interactions & Forms ---
+        window.openAddFlightModal = function(editId = null) { 
+            state.editingFlightId = editId;
+            document.getElementById('modal-flight-title').textContent = editId ? "Modifier le vol" : "Enregistrer un vol";
+            
+            if(editId) {
+                const f = state.flights.find(x => x.id === editId);
+                if(f) {
+                    document.getElementById('flight-date').value = f.date;
+                    document.getElementById('flight-ato').value = f.ato || '';
+                    document.getElementById('flight-reg').value = f.reg;
+                    document.getElementById('flight-type').value = f.type;
+                    document.getElementById('flight-category').value = f.category;
+                    document.getElementById('flight-dep').value = f.dep;
+                    document.getElementById('flight-arr').value = f.arr;
+                    document.getElementById('flight-duration').value = formatTime(f.duration); // shows HH:MM
+                    document.getElementById('flight-landings').value = f.landings;
+                    document.getElementById('flight-condition').value = f.condition;
+                    document.getElementById('flight-function').value = f.function;
+                    document.getElementById('flight-instructor').value = f.instructor || '';
+                    document.getElementById('flight-cost').value = f.cost;
+                    toggleInstructorField();
+                }
+            } else {
+                document.getElementById('form-add-flight').reset();
+                document.getElementById('flight-date').valueAsDate = new Date();
+                toggleInstructorField();
+            }
+            document.getElementById('modal-flight').classList.remove('hidden'); 
+        }
+
+        window.openAddExpenseModal = function(editId = null) { 
+            state.editingExpenseId = editId;
+            document.getElementById('modal-expense-title').textContent = editId ? "Modifier la dépense" : "Saisir une dépense perso";
+
+            if(editId) {
+                const p = state.purchases.find(x => x.id === editId);
+                if(p) {
+                    document.getElementById('expense-date').value = p.date;
+                    document.getElementById('expense-ato').value = p.ato || '';
+                    document.getElementById('expense-title').value = p.title;
+                    document.getElementById('expense-category').value = p.category;
+                    document.getElementById('expense-cost').value = p.cost;
+                }
+            } else {
+                document.getElementById('form-add-expense').reset();
+                document.getElementById('expense-date').valueAsDate = new Date();
+            }
+            document.getElementById('modal-expense').classList.remove('hidden'); 
+        }
+        
+        window.openSettingsModal = function() {
+            document.getElementById('monthly-limit-input').value = state.monthlyLimit;
+            document.getElementById('sep-date-input').value = state.sepDate;
+            document.getElementById('modal-budget').classList.remove('hidden');
+        }
+
+        window.closeModals = function() {
+            document.getElementById('modal-flight').classList.add('hidden');
+            document.getElementById('modal-expense').classList.add('hidden');
+            document.getElementById('modal-budget').classList.add('hidden');
+            document.getElementById('modal-import-config').classList.add('hidden');
+        }
+
+        window.toggleInstructorField = function() {
+            const func = document.getElementById('flight-function').value;
+            const instContainer = document.getElementById('instructor-container');
+            const instInput = document.getElementById('flight-instructor');
+            if (func === 'EP') {
+                instContainer.classList.remove('hidden');
+                instInput.required = true;
+            } else {
+                instContainer.classList.add('hidden');
+                instInput.required = false;
+                instInput.value = '';
+            }
+        }
+
+        window.saveFlight = async function(event) {
+            event.preventDefault();
+            const flightData = {
+                date: document.getElementById('flight-date').value,
+                ato: document.getElementById('flight-ato').value.trim(),
+                reg: document.getElementById('flight-reg').value.toUpperCase(),
+                type: document.getElementById('flight-type').value.toUpperCase(),
+                category: document.getElementById('flight-category').value,
+                dep: document.getElementById('flight-dep').value.toUpperCase(),
+                arr: document.getElementById('flight-arr').value.toUpperCase(),
+                duration: parseInputTime(document.getElementById('flight-duration').value),
+                landings: parseInt(document.getElementById('flight-landings').value) || 1,
+                condition: document.getElementById('flight-condition').value,
+                function: document.getElementById('flight-function').value,
+                instructor: document.getElementById('flight-instructor').value,
+                cost: parseFloat(document.getElementById('flight-cost').value) || 0
+            };
+
+            // Propagation du type (Modèle d'appareil) à toutes les immat correspondantes
+            if (flightData.type && flightData.type !== 'A DÉFINIR' && flightData.type !== '') {
+                state.flights.forEach(f => {
+                    if (f.reg === flightData.reg && (f.type === 'A DÉFINIR' || f.type === '')) {
+                        f.type = flightData.type;
+                    }
+                });
+            }
+
+            if(state.editingFlightId) {
+                const idx = state.flights.findIndex(f => f.id === state.editingFlightId);
+                if(idx !== -1) {
+                    // Conserver le fluxId s'il y en avait un
+                    state.flights[idx] = { ...state.flights[idx], ...flightData };
+                }
+            } else {
+                flightData.id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+                state.flights.push(flightData);
+            }
+            
+            closeModals();
+            renderApp();
+            await saveDataToFirestore();
+            showToast(state.editingFlightId ? "Vol modifié." : "Nouveau vol enregistré.");
+        }
+
+        window.saveExpense = async function(event) {
+            event.preventDefault();
+            const expData = {
+                date: document.getElementById('expense-date').value,
+                ato: document.getElementById('expense-ato').value.trim(),
+                title: document.getElementById('expense-title').value,
+                category: document.getElementById('expense-category').value,
+                cost: parseFloat(document.getElementById('expense-cost').value) || 0
+            };
+
+            if(state.editingExpenseId) {
+                const idx = state.purchases.findIndex(p => p.id === state.editingExpenseId);
+                if(idx !== -1) {
+                    state.purchases[idx] = { ...state.purchases[idx], ...expData };
+                }
+            } else {
+                expData.id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+                state.purchases.push(expData);
+            }
+            
+            closeModals();
+            renderApp();
+            await saveDataToFirestore();
+            showToast(state.editingExpenseId ? "Dépense modifiée." : "Nouvelle dépense enregistrée.");
+        }
+
+        window.saveSettings = async function(event) {
+            event.preventDefault();
+            state.monthlyLimit = parseFloat(document.getElementById('monthly-limit-input').value);
+            state.sepDate = document.getElementById('sep-date-input').value;
+            closeModals();
+            renderApp();
+            await saveDataToFirestore();
+            showToast("Paramètres mis à jour.");
+        }
+
+        window.deleteFlight = async function(id) { 
+            if(confirm("Êtes-vous sûr de vouloir supprimer ce vol ?")) {
+                state.flights = state.flights.filter(f => f.id !== id); 
+                renderApp(); 
+                await saveDataToFirestore();
+            }
+        }
+        window.deleteExpense = async function(id) { 
+            if(confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) {
+                state.purchases = state.purchases.filter(p => p.id !== id); 
+                renderApp(); 
+                await saveDataToFirestore();
+            }
+        }
+
+        window.handleMonthChange = function() {
+            state.selectedMonth = document.getElementById('month-selector').value;
+            renderApp();
+        }
+
+        // --- Utils & Export CSV ---
+        function formatTime(decimalHours) {
+            if (!decimalHours) return "00:00";
+            const totalMinutes = Math.round(decimalHours * 60);
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        }
+
+        function parseInputTime(val) {
+            if (!val) return 0;
+            if (val.includes(':')) {
+                const parts = val.split(':');
+                return parseInt(parts[0], 10) + (parseInt(parts[1], 10) / 60);
+            }
+            return parseFloat(val.replace(',', '.')) || 0;
+        }
+
+        function formatDate(dateString) {
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
+        }
+
+        window.exportCSV = function() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Partie Vols
+            csvContent += "=== REGISTRE DE VOLS ===\n";
+            csvContent += "Date,ATO,Immatriculation,Type,Categorie,Depart,Arrivee,Temps (h),Touches,Condition,Fonction,Instructeur,Cout (EUR),FluxId\n";
+            state.flights.forEach(f => {
+                let row = [
+                    f.date, f.ato || '', f.reg, f.type, f.category, f.dep, f.arr, formatTime(f.duration), 
+                    f.landings, f.condition, f.function, f.instructor, f.cost, f.fluxId || ''
+                ].map(v => `"${v}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            // Partie Achats
+            csvContent += "\n=== ACHATS ET MATERIELS ===\n";
+            csvContent += "Date,ATO,Description,Categorie,Cout (EUR),FluxId\n";
+            state.purchases.forEach(p => {
+                let row = [p.date, p.ato || '', p.title, p.category, p.cost, p.fluxId || ''].map(v => `"${v}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `aerolog_export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Import Logic ---
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
+
+        window.handleImport = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const text = await file.text();
+            
+            if (text.includes('=== REGISTRE DE VOLS ===')) {
+                // Sauvegarde AeroLog: direct import
+                const res = parseBackupCSV(text);
+                updatePostImport(res);
+            } else if (text.includes('Numéro de flux') && text.includes('Compte imputé')) {
+                // Fichier Club: ask for ATO and Format
+                tempImportData = text;
+                document.getElementById('import-ato-name').value = '';
+                document.getElementById('import-time-format').value = 'decimal';
+                document.getElementById('modal-import-config').classList.remove('hidden');
+            } else {
+                showToast(`Erreur: Format de fichier non reconnu.`);
+            }
+            
+            event.target.value = ''; // Reset input
+        }
+        
+        window.confirmImport = function() {
+            const atoName = document.getElementById('import-ato-name').value.trim();
+            const timeFormat = document.getElementById('import-time-format').value;
+            
+            closeModals();
+            
+            if(tempImportData) {
+                const res = parseAeroclubCSV(tempImportData, atoName, timeFormat);
+                updatePostImport(res);
+                tempImportData = null;
+            }
+        }
+        
+        async function updatePostImport(res) {
+            if (res.expenses > 0 || res.flights > 0) {
+                 const allDates = [...state.purchases, ...state.flights].map(x => x.date).sort();
+                 if (allDates.length > 0) {
+                     state.selectedMonth = allDates[allDates.length - 1].slice(0, 7);
+                 }
+            }
+            renderApp();
+            await saveDataToFirestore();
+            showToast(`${res.flights} vol(s) et ${res.expenses} apports/dépenses importés.`);
+        }
+
+        function parseAeroclubCSV(csv, atoName, timeFormat) {
+            const lines = csv.split('\n');
+            let importedFlights = 0;
+            let importedExpenses = 0;
+
+            const parseMoney = (str) => {
+                if (!str) return 0;
+                const cleaned = str.replace(/[^0-9,\.-]/g, '').replace(/,/g, '.');
+                return parseFloat(cleaned) || 0;
+            };
+
+            const parseAeroclubTime = (str) => {
+                if (!str) return 0;
+                str = str.trim();
+                if (str.includes(':')) {
+                    const parts = str.split(':');
+                    return parseInt(parts[0], 10) + (parseInt(parts[1], 10) / 60);
+                }
+                
+                str = str.replace(/,/g, '.');
+                if (timeFormat === 'normal') {
+                    // Si l'utilisateur dit que 1.50 = 1h50m
+                    const parts = str.split('.');
+                    const h = parseInt(parts[0], 10) || 0;
+                    const m = parseInt((parts[1] || '0').padEnd(2, '0').slice(0, 2), 10);
+                    return h + (m / 60);
+                }
+                // Décimal par défaut
+                return parseFloat(str) || 0;
+            };
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = line.split(';');
+                if (cols.length < 12) continue;
+
+                const dateRaw = cols[0].split(' ')[0]; // ex: 2026-03-27
+                const produit = cols[1].trim();
+                const fluxId = cols[2].trim();
+                const contrepartie = cols[4].trim();
+                const placeDroite = cols[6].trim();
+                const ressource = cols[7].trim();
+                
+                const credit = parseMoney(cols[cols.length - 1]);
+                const debit = parseMoney(cols[cols.length - 2]);
+                const commentaire = cols.slice(9, cols.length - 2).join(';').trim();
+
+                let duration = parseAeroclubTime(cols[8]);
+
+                // CAS 1 : FACTURATION / VOL
+                if (duration > 0 && (produit.toLowerCase().includes('heure') || contrepartie.toLowerCase().includes('heure') || ressource !== '')) {
+                    const instructor = placeDroite;
+                    const isInstruction = instructor.length > 0;
+                    const reg = ressource || 'INCONNU';
+
+                    let landings = 1;
+                    const commentLower = commentaire.toLowerCase();
+                    const allMatches = [...commentLower.matchAll(/(\d+)\s*touch/g)];
+                    if (allMatches.length > 0) {
+                        landings = allMatches.reduce((sum, m) => sum + parseInt(m[1], 10), 0);
+                    } else if (commentLower.includes('touch') || commentLower.includes('complet')) {
+                        landings = 1;
+                    }
+
+                    const isDuplicate = state.flights.some(f => 
+                        (f.fluxId && f.fluxId === fluxId) || 
+                        (!f.fluxId && f.date === dateRaw && f.reg === reg && Math.abs(f.duration - duration) < 0.02 && f.cost === debit)
+                    );
+
+                    if (!isDuplicate) {
+                        state.flights.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i + Math.floor(Math.random() * 10000),
+                            fluxId: fluxId,
+                            ato: atoName,
+                            date: dateRaw,
+                            reg: reg,
+                            type: 'A DÉFINIR',
+                            category: 'Aéroclub',
+                            dep: 'LOCAL',
+                            arr: 'LOCAL',
+                            duration: duration,
+                            landings: landings,
+                            condition: 'Jour',
+                            function: isInstruction ? 'EP' : 'CdB',
+                            instructor: instructor,
+                            cost: debit
+                        });
+                        importedFlights++;
+                    }
+                } 
+                // CAS 2 : APPORT D'ARGENT
+                else if (credit > 0) {
+                    let category = 'Apport Aéroclub';
+                    const lowerContrepartie = contrepartie.toLowerCase();
+                    const lowerComment = commentaire.toLowerCase();
+
+                    if (lowerContrepartie.includes('bourse') || lowerComment.includes('subvention') || lowerComment.includes('réduction') || lowerComment.includes('aide')) {
+                        category = 'Bourse / Subvention';
+                    }
+                    
+                    let titleDetail = commentaire || contrepartie || "Crédit";
+                    if (lowerComment === 'virement' && contrepartie) {
+                        titleDetail = `Virement (${contrepartie})`;
+                    }
+                    const title = category + " - " + titleDetail;
+                    const cost = credit; 
+                    
+                    const isDuplicateExp = state.purchases.some(p => 
+                        (p.fluxId && p.fluxId === fluxId) || 
+                        (!p.fluxId && p.date === dateRaw && p.title === title && Math.abs(p.cost - cost) < 0.01)
+                    );
+
+                    if (!isDuplicateExp) {
+                        state.purchases.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i + Math.floor(Math.random() * 10000),
+                            fluxId: fluxId,
+                            ato: atoName,
+                            date: dateRaw,
+                            title: title,
+                            category: category,
+                            cost: cost
+                        });
+                        importedExpenses++;
+                    }
+                }
+            }
+            
+            return { flights: importedFlights, expenses: importedExpenses };
+        }
+
+        function parseBackupCSV(csv) {
+            const lines = csv.split('\n');
+            let mode = ''; 
+            let importedFlights = 0;
+            let importedExpenses = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                if (line.includes('=== REGISTRE DE VOLS ===')) { mode = 'flights'; continue; }
+                if (line.includes('=== ACHATS ET MATERIELS ===')) { mode = 'expenses'; continue; }
+                if (line.startsWith('Date,')) continue; 
+
+                const row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^"|"$/g, ''));
+
+                if (mode === 'flights' && row.length >= 12) {
+                    const hasAto = row[1] !== '' && !row[1].match(/^[F|G]-/i) && row.length >= 13; 
+                    
+                    const date = row[0];
+                    const ato = hasAto ? row[1] : '';
+                    const reg = hasAto ? row[2] : row[1];
+                    const type = hasAto ? row[3] : row[2];
+                    const category = hasAto ? row[4] : row[3];
+                    const dep = hasAto ? row[5] : row[4];
+                    const arr = hasAto ? row[6] : row[5];
+                    const durationStr = hasAto ? row[7] : row[6];
+                    const durationParsed = parseInputTime(durationStr);
+                    const landings = parseInt(hasAto ? row[8] : row[7]) || 1;
+                    const condition = hasAto ? row[9] : row[8];
+                    const func = hasAto ? row[10] : row[9];
+                    const inst = hasAto ? row[11] : row[10];
+                    const cost = parseFloat(hasAto ? row[12] : row[11]);
+                    const fluxId = (hasAto && row.length > 13) ? row[13] : ((!hasAto && row.length > 12) ? row[12] : '');
+
+                    const isDuplicate = state.flights.some(f => 
+                        (f.fluxId && fluxId && f.fluxId === fluxId) || 
+                        (!fluxId && f.date === date && Math.abs(f.duration - durationParsed) < 0.01)
+                    );
+
+                    if (!isDuplicate) {
+                        state.flights.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i,
+                            fluxId: fluxId,
+                            ato: ato,
+                            date: date,
+                            reg: reg,
+                            type: type,
+                            category: category,
+                            dep: dep,
+                            arr: arr,
+                            duration: durationParsed,
+                            landings: landings,
+                            condition: condition,
+                            function: func,
+                            instructor: inst,
+                            cost: cost
+                        });
+                        importedFlights++;
+                    }
+                } else if (mode === 'expenses' && row.length >= 4) {
+                    const hasAto = row.length >= 6;
+                    
+                    const date = row[0];
+                    const ato = hasAto ? row[1] : '';
+                    const title = hasAto ? row[2] : row[1];
+                    const category = hasAto ? row[3] : row[2];
+                    const costParsed = parseFloat(hasAto ? row[4] : row[3]);
+                    const fluxId = hasAto ? (row[5] || '') : (row[4] || '');
+                    
+                    const isDuplicateExp = state.purchases.some(p => 
+                        (p.fluxId && fluxId && p.fluxId === fluxId) || 
+                        (!fluxId && p.date === date && p.title === title && Math.abs(p.cost - costParsed) < 0.01)
+                    );
+
+                    if (!isDuplicateExp) {
+                        state.purchases.push({
+                            id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i,
+                            fluxId: fluxId,
+                            ato: ato,
+                            date: date,
+                            title: title,
+                            category: category,
+                            cost: costParsed
+                        });
+                        importedExpenses++;
+                    }
+                }
+            }
+            
+            return { flights: importedFlights, expenses: importedExpenses };
+        }
+    </script>
+</body>
+</html>
