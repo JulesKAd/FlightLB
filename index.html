@@ -35,6 +35,9 @@
                 <div class="flex items-center gap-2">
                     <i class="ph ph-airplane text-2xl text-gray-900"></i>
                     <span class="font-semibold tracking-tight text-lg">AeroLog</span>
+                    <span id="sync-status" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium ml-2 transition-opacity opacity-0 flex items-center gap-1">
+                        <i class="ph-fill ph-hard-drives"></i> Local
+                    </span>
                 </div>
                 <div class="flex items-center space-x-6 text-sm">
                     <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-5 transition-colors tab-active">
@@ -88,15 +91,27 @@
                         <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cumul Global (Depuis le début)</span>
                         <i class="ph ph-globe text-gray-300 text-xl"></i>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
                         <div>
                             <span class="block text-xs text-gray-500 mb-1">Heures Totales</span>
-                            <span id="stat-total-hours" class="text-3xl font-light tracking-tight text-indigo-600">00:00</span>
+                            <span id="stat-total-hours" class="text-2xl font-light tracking-tight text-indigo-600">00:00</span>
                         </div>
-                        <div class="border-l border-gray-100 pl-4">
-                            <span class="block text-xs text-gray-500 mb-1">Investissement Total</span>
-                            <span id="stat-global-total" class="text-3xl font-semibold tracking-tight text-gray-900">0 €</span>
+                        <div>
+                            <span class="block text-xs text-gray-500 mb-1">CdB</span>
+                            <span id="stat-global-pic" class="text-2xl font-light tracking-tight">00:00</span>
                         </div>
+                        <div>
+                            <span class="block text-xs text-gray-500 mb-1">Instruction</span>
+                            <span id="stat-global-dual" class="text-2xl font-light tracking-tight">00:00</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-gray-500 mb-1">Touchés</span>
+                            <span id="stat-global-landings" class="text-2xl font-light tracking-tight">0</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-100 pt-4 flex justify-between items-center">
+                        <span class="block text-xs font-medium text-gray-500">Investissement Total</span>
+                        <span id="stat-global-total" class="text-2xl font-semibold tracking-tight text-gray-900">0 €</span>
                     </div>
                 </div>
 
@@ -116,12 +131,12 @@
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
+                    <div class="grid grid-cols-2 gap-4 mb-4 flex-grow">
+                        <div class="flex flex-col justify-center">
                             <span id="label-activity-hours" class="block text-xs text-gray-500 mb-1">Heures</span>
                             <span id="stat-period-hours" class="text-2xl font-light tracking-tight">00:00</span>
                         </div>
-                        <div class="border-l border-gray-100 pl-4">
+                        <div class="border-l border-gray-100 pl-4 flex flex-col justify-center">
                             <span id="label-activity-expenses" class="block text-xs text-gray-500 mb-1">Dépenses</span>
                             <span id="stat-period-total" class="text-2xl font-medium tracking-tight text-gray-900">0 €</span>
                         </div>
@@ -170,14 +185,19 @@
                     </div>
                 </div>
 
-                <!-- PROROGATION -->
+                <!-- QUALIFICATIONS & MEDICAL -->
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
-                    <div class="mb-5">
-                        <h2 class="text-sm font-medium text-gray-900">Prorogation SEP</h2>
-                        <p class="text-[11px] text-gray-400 mt-0.5">Période : <span id="proro-date-range" class="text-gray-600">--</span></p>
+                    <div class="flex justify-between items-start mb-5">
+                        <div>
+                            <h2 class="text-sm font-medium text-gray-900">Qualif. & Médical</h2>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Période SEP : <span id="proro-date-range" class="text-gray-600">--</span></p>
+                        </div>
+                        <button onclick="openSettingsModal()" class="text-gray-400 hover:text-gray-900 transition-colors" title="Paramètres">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                        </button>
                     </div>
                     
-                    <div class="space-y-4 flex-grow">
+                    <div class="space-y-4">
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs"><span class="text-gray-500">Total (12h)</span><span id="proro-hours-text" class="font-medium">00:00 / 12h</span></div>
                             <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-hours-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
@@ -193,6 +213,17 @@
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs"><span class="text-gray-500">Instructeur (1h)</span><span id="proro-inst-text" class="font-medium">00:00 / 1h</span></div>
                             <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-inst-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-[11px] text-gray-500 mb-1 uppercase tracking-wider">Classe 1</span>
+                            <span id="med-class1-status" class="text-xs font-medium text-gray-900">--</span>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] text-gray-500 mb-1 uppercase tracking-wider">Classe 2</span>
+                            <span id="med-class2-status" class="text-xs font-medium text-gray-900">--</span>
                         </div>
                     </div>
                 </div>
@@ -494,19 +525,35 @@
     <div id="modal-budget" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md flex flex-col shadow-xl max-h-[90vh]">
             <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
-                <h3 class="font-medium text-lg">Paramètres</h3>
+                <h3 class="font-medium text-lg">Paramètres & Qualifications</h3>
                 <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
             </div>
             
             <form id="form-budget" onsubmit="saveSettings(event)" class="p-6 space-y-6 overflow-y-auto">
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Limite de dépenses mensuelle (€)</label>
-                    <input type="number" id="monthly-limit-input" step="10" min="0" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-3 text-base transition-colors outline-none">
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Finances</h4>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Limite de dépenses mensuelle (€)</label>
+                        <input type="number" id="monthly-limit-input" step="10" min="0" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-2 text-sm transition-colors outline-none">
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1.5">Date d'obtention SEP</label>
-                    <input type="date" id="sep-date-input" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-3 text-base transition-colors outline-none">
+                <div class="space-y-4 border-t border-gray-100 pt-4">
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Médical & Licences</h4>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5">Date d'obtention/Prorogation SEP</label>
+                        <input type="date" id="sep-date-input" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-2 text-sm transition-colors outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1.5">Expiration Classe 1</label>
+                            <input type="date" id="class1-date-input" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1.5">Expiration Classe 2</label>
+                            <input type="date" id="class2-date-input" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 shrink-0">
@@ -517,16 +564,20 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-xl transform transition-transform duration-300 translate-y-24 opacity-0 flex items-center gap-3 z-[70]">
+        <i class="ph-fill ph-check-circle text-emerald-400 text-xl"></i>
+        <span id="toast-message" class="text-sm font-medium">Action réussie</span>
+    </div>
+
     <!-- Script Application -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         // --- State Management ---
-        let state = {
+        window.state = {
             monthlyLimit: 300,
             sepDate: '2024-05-15',
+            class1Date: '',
+            class2Date: '',
             flights: [],
             purchases: [],
             selectedMonth: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
@@ -534,81 +585,59 @@
             editingExpenseId: null
         };
         
-        let tempImportData = null; 
+        window.tempImportData = null; 
         
-        // --- Firebase Globals ---
-        let db, auth, currentUser = null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'aerolog-app';
+        // --- Local DB (IndexedDB) Fallback ---
+        window.initLocalDB = function() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('AeroLogDB', 2); // Upgraded version
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('appState')) {
+                        db.createObjectStore('appState');
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
+        window.saveToLocalDB = async function() {
+            try {
+                const db = await window.initLocalDB();
+                const tx = db.transaction('appState', 'readwrite');
+                tx.objectStore('appState').put(JSON.stringify(window.state), 'main');
+            } catch(e) { console.error("IndexedDB save error", e); }
+        };
+
+        window.loadFromLocalDB = async function() {
+            try {
+                const db = await window.initLocalDB();
+                const data = await new Promise((resolve) => {
+                    const tx = db.transaction('appState', 'readonly');
+                    const req = tx.objectStore('appState').get('main');
+                    req.onsuccess = () => resolve(req.result ? JSON.parse(req.result) : null);
+                    req.onerror = () => resolve(null);
+                });
+                if (data) {
+                    window.state.flights = data.flights || [];
+                    window.state.purchases = data.purchases || [];
+                    window.state.monthlyLimit = data.monthlyLimit || 300;
+                    window.state.sepDate = data.sepDate || '';
+                    window.state.class1Date = data.class1Date || '';
+                    window.state.class2Date = data.class2Date || '';
+                    if(data.selectedMonth) window.state.selectedMonth = data.selectedMonth;
+                }
+            } catch(e) { console.error("IndexedDB load error", e); }
+        };
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                await initFirebase();
-            } else {
-                renderApp();
-            }
+            await window.loadFromLocalDB();
+            renderApp();
+            const syncBadge = document.getElementById('sync-status');
+            syncBadge.classList.remove('opacity-0');
+            syncBadge.classList.add('opacity-100');
         });
-
-        // --- Firebase Initialization & Sync ---
-        async function initFirebase() {
-            const firebaseConfig = JSON.parse(__firebase_config);
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch(e) {
-                console.error("Auth error", e);
-            }
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user;
-                    await loadDataFromFirestore();
-                } else {
-                    currentUser = null;
-                    renderApp(); 
-                }
-            });
-        }
-
-        async function loadDataFromFirestore() {
-            if (!currentUser || !db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'appData', 'state');
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    state.flights = data.flights ? JSON.parse(data.flights) : [];
-                    state.purchases = data.purchases ? JSON.parse(data.purchases) : [];
-                    state.monthlyLimit = data.monthlyLimit || 300;
-                    state.sepDate = data.sepDate || '2024-05-15';
-                }
-                renderApp();
-            } catch (e) {
-                console.error("Error loading data", e);
-                renderApp();
-            }
-        }
-
-        async function saveDataToFirestore() {
-            if (!currentUser || !db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'appData', 'state');
-                await setDoc(docRef, {
-                    flights: JSON.stringify(state.flights),
-                    purchases: JSON.stringify(state.purchases),
-                    monthlyLimit: state.monthlyLimit,
-                    sepDate: state.sepDate
-                });
-            } catch (e) {
-                console.error("Error saving data", e);
-            }
-        }
 
         // --- Navigation ---
         window.switchTab = function(tabId) {
@@ -623,16 +652,26 @@
 
         // --- Core Rendering Logic ---
         window.renderApp = function() {
-            state.flights.sort((a, b) => new Date(b.date) - new Date(a.date));
-            state.purchases.sort((a, b) => new Date(b.date) - new Date(a.date));
+            window.state.flights.sort((a, b) => new Date(b.date) - new Date(a.date));
+            window.state.purchases.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // Globals
-            let totalHours = 0;
-            state.flights.forEach(f => totalHours += parseFloat(f.duration));
+            // Globals stats (Heures, CdB, Instruction, Touchés)
+            let totalHours = 0, picHours = 0, dualHours = 0, totalLandings = 0;
+            
+            window.state.flights.forEach(f => {
+                totalHours += parseFloat(f.duration);
+                totalLandings += parseInt(f.landings) || 0;
+                if (f.function === 'CdB') picHours += parseFloat(f.duration);
+                if (f.function === 'EP') dualHours += parseFloat(f.duration);
+            });
+
             document.getElementById('stat-total-hours').textContent = formatTime(totalHours);
+            document.getElementById('stat-global-pic').textContent = formatTime(picHours);
+            document.getElementById('stat-global-dual').textContent = formatTime(dualHours);
+            document.getElementById('stat-global-landings').textContent = totalLandings;
             
             let globalTotal = 0;
-            state.purchases.forEach(p => globalTotal += parseFloat(p.cost));
+            window.state.purchases.forEach(p => globalTotal += parseFloat(p.cost));
             document.getElementById('stat-global-total').textContent = globalTotal.toFixed(0) + ' €';
 
             // Period (Activity) processing
@@ -648,7 +687,7 @@
             let periodOtherPurchases = 0;
             let periodHours = 0;
 
-            state.purchases.forEach(p => {
+            window.state.purchases.forEach(p => {
                 const pMonth = p.date.slice(0, 7);
                 if (pMonth >= startMonthStr && pMonth <= currentMonthStr) {
                     if (p.category.includes('Apport') || p.category.includes('Bourse') || p.title.toLowerCase().includes('virement')) {
@@ -659,7 +698,7 @@
                 }
             });
             
-            state.flights.forEach(f => {
+            window.state.flights.forEach(f => {
                 const fMonth = f.date.slice(0, 7);
                 if(fMonth >= startMonthStr && fMonth <= currentMonthStr) {
                     periodHours += parseFloat(f.duration);
@@ -667,7 +706,7 @@
             });
 
             let periodTotal = periodClubDeposits + periodOtherPurchases;
-            let periodLimit = state.monthlyLimit * activitySpan;
+            let periodLimit = window.state.monthlyLimit * activitySpan;
 
             document.getElementById('stat-period-hours').textContent = formatTime(periodHours);
             document.getElementById('stat-period-total').textContent = periodTotal.toFixed(0) + ' €';
@@ -700,7 +739,7 @@
             }
 
             renderChart();
-            renderProrogation();
+            renderQualifications();
             renderFleetStats();
             renderFullLogbook();
             renderExpenses();
@@ -710,13 +749,13 @@
             const tbody = document.getElementById('fleet-stats-list');
             tbody.innerHTML = '';
             
-            if(state.flights.length === 0) {
+            if(window.state.flights.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-xs text-gray-400">Aucune donnée.</td></tr>`;
                 return;
             }
 
             const fleet = {};
-            state.flights.forEach(f => {
+            window.state.flights.forEach(f => {
                 if (!fleet[f.reg]) {
                     fleet[f.reg] = { reg: f.reg, type: f.type, duration: 0, landings: 0 };
                 }
@@ -753,7 +792,7 @@
             
             if (span === 'all') {
                 let earliest = currentMonthStr; 
-                let allDates = [...state.purchases, ...state.flights].map(x => x.date.slice(0, 7)).sort();
+                let allDates = [...window.state.purchases, ...window.state.flights].map(x => x.date.slice(0, 7)).sort();
                 if (allDates.length > 0) earliest = allDates[0];
                 
                 let current = earliest;
@@ -781,11 +820,11 @@
             
             months.forEach(m => { chartData[m] = { cost: 0, hours: 0 }; });
             
-            state.purchases.forEach(p => {
+            window.state.purchases.forEach(p => {
                 const m = p.date.slice(0, 7);
                 if(chartData[m]) chartData[m].cost += parseFloat(p.cost);
             });
-            state.flights.forEach(f => {
+            window.state.flights.forEach(f => {
                 const m = f.date.slice(0, 7);
                 if(chartData[m]) chartData[m].hours += parseFloat(f.duration);
             });
@@ -820,36 +859,70 @@
             });
         }
 
-        window.renderProrogation = function() {
-            if (!state.sepDate) return;
-            const sepDateObj = new Date(state.sepDate);
-            const today = new Date(); 
-            
-            let expiryDate = new Date(sepDateObj);
-            while (expiryDate <= today) {
-                expiryDate.setFullYear(expiryDate.getFullYear() + 2);
-            }
-            
-            const startDate = new Date(expiryDate);
-            startDate.setFullYear(startDate.getFullYear() - 1);
-
-            document.getElementById('proro-date-range').textContent = `${formatDate(startDate)} - ${formatDate(expiryDate)}`;
-
+        window.renderQualifications = function() {
+            // Prorogation SEP
+            let proroRangeText = '--';
             let hours12 = 0, hoursPic = 0, landings = 0, hoursInst = 0;
-            state.flights.forEach(f => {
-                const fDate = new Date(f.date);
-                if (fDate >= startDate && fDate <= expiryDate) {
-                    hours12 += f.duration;
-                    landings += f.landings || 0;
-                    if (f.function === 'CdB') hoursPic += f.duration;
-                    if (f.function === 'EP') hoursInst += f.duration;
-                }
-            });
 
+            if (window.state.sepDate) {
+                const sepDateObj = new Date(window.state.sepDate);
+                const today = new Date(); 
+                
+                let expiryDate = new Date(sepDateObj);
+                while (expiryDate <= today) {
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 2);
+                }
+                
+                const startDate = new Date(expiryDate);
+                startDate.setFullYear(startDate.getFullYear() - 1);
+
+                proroRangeText = `${formatDate(startDate)} - ${formatDate(expiryDate)}`;
+
+                window.state.flights.forEach(f => {
+                    const fDate = new Date(f.date);
+                    if (fDate >= startDate && fDate <= expiryDate) {
+                        hours12 += f.duration;
+                        landings += f.landings || 0;
+                        if (f.function === 'CdB') hoursPic += f.duration;
+                        if (f.function === 'EP') hoursInst += f.duration;
+                    }
+                });
+            }
+            document.getElementById('proro-date-range').textContent = proroRangeText;
             updateProgress('proro-hours', hours12, 12, true);
             updateProgress('proro-pic', hoursPic, 6, true);
             updateProgress('proro-ldgs', landings, 12, false);
             updateProgress('proro-inst', hoursInst, 1, true);
+
+            // Médical
+            const renderMedStatus = (dateStr, elementId) => {
+                const el = document.getElementById(elementId);
+                if (!dateStr) {
+                    el.textContent = 'Non renseignée';
+                    el.className = 'text-xs font-medium text-gray-400';
+                    return;
+                }
+                const expDate = new Date(dateStr);
+                const todayMidnight = new Date();
+                todayMidnight.setHours(0,0,0,0);
+                
+                const diffTime = expDate - todayMidnight;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                    el.textContent = `Expirée (${formatDate(dateStr)})`;
+                    el.className = 'text-xs font-bold text-red-600';
+                } else if (diffDays <= 45) {
+                    el.textContent = `Bientôt (${formatDate(dateStr)})`;
+                    el.className = 'text-xs font-bold text-amber-500';
+                } else {
+                    el.textContent = `Valide (${formatDate(dateStr)})`;
+                    el.className = 'text-xs font-medium text-emerald-600';
+                }
+            };
+
+            renderMedStatus(window.state.class1Date, 'med-class1-status');
+            renderMedStatus(window.state.class2Date, 'med-class2-status');
         }
 
         window.updateProgress = function(idPrefix, current, max, isTime = true) {
@@ -873,7 +946,7 @@
             const emptyState = document.getElementById('empty-state-flights');
             tbody.innerHTML = '';
 
-            if(state.flights.length === 0) {
+            if(window.state.flights.length === 0) {
                 emptyState.classList.remove('hidden');
                 tbody.parentElement.classList.add('hidden');
                 return;
@@ -884,14 +957,14 @@
 
             let currentYear = '';
 
-            state.flights.forEach(f => {
+            window.state.flights.forEach(f => {
                 const fYear = f.date.substring(0, 4);
                 
                 // Grouping by Year
                 if (fYear !== currentYear) {
                     let yearHours = 0;
                     let yearCost = 0;
-                    state.flights.forEach(fy => {
+                    window.state.flights.forEach(fy => {
                         if(fy.date.substring(0,4) === fYear) {
                             yearHours += parseFloat(fy.duration);
                             yearCost += parseFloat(fy.cost);
@@ -957,7 +1030,7 @@
             const emptyState = document.getElementById('empty-state-expenses');
             tbody.innerHTML = '';
 
-            if(state.purchases.length === 0) {
+            if(window.state.purchases.length === 0) {
                 emptyState.classList.remove('hidden');
                 tbody.parentElement.classList.add('hidden');
                 return;
@@ -968,13 +1041,13 @@
 
             let currentYear = '';
 
-            state.purchases.forEach(p => {
+            window.state.purchases.forEach(p => {
                 const pYear = p.date.substring(0, 4);
                 
                 // Grouping by Year
                 if (pYear !== currentYear) {
                     let yearCost = 0;
-                    state.purchases.forEach(py => {
+                    window.state.purchases.forEach(py => {
                         if(py.date.substring(0,4) === pYear) {
                             yearCost += parseFloat(py.cost);
                         }
@@ -1019,11 +1092,11 @@
 
         // --- Interactions & Forms ---
         window.openAddFlightModal = function(editId = null) { 
-            state.editingFlightId = editId;
+            window.state.editingFlightId = editId ? editId.toString() : null;
             document.getElementById('modal-flight-title').textContent = editId ? "Modifier le vol" : "Enregistrer un vol";
             
             if(editId) {
-                const f = state.flights.find(x => x.id === editId);
+                const f = window.state.flights.find(x => x.id.toString() === window.state.editingFlightId);
                 if(f) {
                     document.getElementById('flight-date').value = f.date;
                     document.getElementById('flight-ato').value = f.ato || '';
@@ -1049,11 +1122,11 @@
         }
 
         window.openAddExpenseModal = function(editId = null) { 
-            state.editingExpenseId = editId;
+            window.state.editingExpenseId = editId ? editId.toString() : null;
             document.getElementById('modal-expense-title').textContent = editId ? "Modifier la dépense" : "Saisir une dépense perso";
 
             if(editId) {
-                const p = state.purchases.find(x => x.id === editId);
+                const p = window.state.purchases.find(x => x.id.toString() === window.state.editingExpenseId);
                 if(p) {
                     document.getElementById('expense-date').value = p.date;
                     document.getElementById('expense-ato').value = p.ato || '';
@@ -1069,8 +1142,10 @@
         }
         
         window.openSettingsModal = function() {
-            document.getElementById('monthly-limit-input').value = state.monthlyLimit;
-            document.getElementById('sep-date-input').value = state.sepDate;
+            document.getElementById('monthly-limit-input').value = window.state.monthlyLimit;
+            document.getElementById('sep-date-input').value = window.state.sepDate || '';
+            document.getElementById('class1-date-input').value = window.state.class1Date || '';
+            document.getElementById('class2-date-input').value = window.state.class2Date || '';
             document.getElementById('modal-budget').classList.remove('hidden');
         }
 
@@ -1113,30 +1188,31 @@
                 cost: parseFloat(document.getElementById('flight-cost').value) || 0
             };
 
-            // Propagation du type (Modèle d'appareil) à toutes les immat correspondantes
+            const isEdit = !!window.state.editingFlightId;
+            flightData.id = isEdit ? window.state.editingFlightId : (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            // Propagation du type (Modèle d'appareil)
             if (flightData.type && flightData.type !== 'A DÉFINIR' && flightData.type !== '') {
-                state.flights.forEach(f => {
+                window.state.flights.forEach(f => {
                     if (f.reg === flightData.reg && (f.type === 'A DÉFINIR' || f.type === '')) {
                         f.type = flightData.type;
                     }
                 });
             }
 
-            if(state.editingFlightId) {
-                const idx = state.flights.findIndex(f => f.id === state.editingFlightId);
+            if(isEdit) {
+                const idx = window.state.flights.findIndex(f => f.id.toString() === flightData.id);
                 if(idx !== -1) {
-                    // Conserver le fluxId s'il y en avait un
-                    state.flights[idx] = { ...state.flights[idx], ...flightData };
+                    window.state.flights[idx] = { ...window.state.flights[idx], ...flightData };
                 }
             } else {
-                flightData.id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-                state.flights.push(flightData);
+                window.state.flights.push(flightData);
             }
-            
+
             closeModals();
             renderApp();
-            await saveDataToFirestore();
-            showToast(state.editingFlightId ? "Vol modifié." : "Nouveau vol enregistré.");
+            await window.saveToLocalDB();
+            showToast(isEdit ? "Vol modifié." : "Nouveau vol enregistré.");
         }
 
         window.saveExpense = async function(event) {
@@ -1149,50 +1225,60 @@
                 cost: parseFloat(document.getElementById('expense-cost').value) || 0
             };
 
-            if(state.editingExpenseId) {
-                const idx = state.purchases.findIndex(p => p.id === state.editingExpenseId);
+            const isEdit = !!window.state.editingExpenseId;
+            expData.id = isEdit ? window.state.editingExpenseId : (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            if(isEdit) {
+                const idx = window.state.purchases.findIndex(p => p.id.toString() === expData.id);
                 if(idx !== -1) {
-                    state.purchases[idx] = { ...state.purchases[idx], ...expData };
+                    window.state.purchases[idx] = { ...window.state.purchases[idx], ...expData };
                 }
             } else {
-                expData.id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
-                state.purchases.push(expData);
+                window.state.purchases.push(expData);
             }
             
             closeModals();
             renderApp();
-            await saveDataToFirestore();
-            showToast(state.editingExpenseId ? "Dépense modifiée." : "Nouvelle dépense enregistrée.");
+            await window.saveToLocalDB();
+            showToast(isEdit ? "Dépense modifiée." : "Nouvelle dépense enregistrée.");
         }
 
         window.saveSettings = async function(event) {
             event.preventDefault();
-            state.monthlyLimit = parseFloat(document.getElementById('monthly-limit-input').value);
-            state.sepDate = document.getElementById('sep-date-input').value;
+            window.state.monthlyLimit = parseFloat(document.getElementById('monthly-limit-input').value) || 0;
+            window.state.sepDate = document.getElementById('sep-date-input').value;
+            window.state.class1Date = document.getElementById('class1-date-input').value;
+            window.state.class2Date = document.getElementById('class2-date-input').value;
+
             closeModals();
             renderApp();
-            await saveDataToFirestore();
+            await window.saveToLocalDB();
             showToast("Paramètres mis à jour.");
         }
 
         window.deleteFlight = async function(id) { 
             if(confirm("Êtes-vous sûr de vouloir supprimer ce vol ?")) {
-                state.flights = state.flights.filter(f => f.id !== id); 
+                const strId = id.toString();
+                window.state.flights = window.state.flights.filter(f => f.id.toString() !== strId); 
                 renderApp(); 
-                await saveDataToFirestore();
+                await window.saveToLocalDB();
+                showToast("Vol supprimé.");
             }
         }
         window.deleteExpense = async function(id) { 
             if(confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) {
-                state.purchases = state.purchases.filter(p => p.id !== id); 
+                const strId = id.toString();
+                window.state.purchases = window.state.purchases.filter(p => p.id.toString() !== strId); 
                 renderApp(); 
-                await saveDataToFirestore();
+                await window.saveToLocalDB();
+                showToast("Dépense supprimée.");
             }
         }
 
-        window.handleMonthChange = function() {
-            state.selectedMonth = document.getElementById('month-selector').value;
+        window.handleMonthChange = async function() {
+            window.state.selectedMonth = document.getElementById('month-selector').value;
             renderApp();
+            await window.saveToLocalDB();
         }
 
         // --- Utils & Export CSV ---
@@ -1221,10 +1307,18 @@
         window.exportCSV = function() {
             let csvContent = "data:text/csv;charset=utf-8,";
             
+            // Partie Paramètres (Nouveau)
+            csvContent += "=== PARAMETRES ===\n";
+            csvContent += "Cle,Valeur\n";
+            csvContent += `"monthlyLimit","${window.state.monthlyLimit}"\n`;
+            csvContent += `"sepDate","${window.state.sepDate || ''}"\n`;
+            csvContent += `"class1Date","${window.state.class1Date || ''}"\n`;
+            csvContent += `"class2Date","${window.state.class2Date || ''}"\n`;
+
             // Partie Vols
-            csvContent += "=== REGISTRE DE VOLS ===\n";
+            csvContent += "\n=== REGISTRE DE VOLS ===\n";
             csvContent += "Date,ATO,Immatriculation,Type,Categorie,Depart,Arrivee,Temps (h),Touches,Condition,Fonction,Instructeur,Cout (EUR),FluxId\n";
-            state.flights.forEach(f => {
+            window.state.flights.forEach(f => {
                 let row = [
                     f.date, f.ato || '', f.reg, f.type, f.category, f.dep, f.arr, formatTime(f.duration), 
                     f.landings, f.condition, f.function, f.instructor, f.cost, f.fluxId || ''
@@ -1235,7 +1329,7 @@
             // Partie Achats
             csvContent += "\n=== ACHATS ET MATERIELS ===\n";
             csvContent += "Date,ATO,Description,Categorie,Cout (EUR),FluxId\n";
-            state.purchases.forEach(p => {
+            window.state.purchases.forEach(p => {
                 let row = [p.date, p.ato || '', p.title, p.category, p.cost, p.fluxId || ''].map(v => `"${v}"`).join(",");
                 csvContent += row + "\n";
             });
@@ -1262,51 +1356,73 @@
         }
 
         window.handleImport = async function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
 
-            const text = await file.text();
-            
-            if (text.includes('=== REGISTRE DE VOLS ===')) {
-                // Sauvegarde AeroLog: direct import
-                const res = parseBackupCSV(text);
-                updatePostImport(res);
-            } else if (text.includes('Numéro de flux') && text.includes('Compte imputé')) {
-                // Fichier Club: ask for ATO and Format
-                tempImportData = text;
-                document.getElementById('import-ato-name').value = '';
-                document.getElementById('import-time-format').value = 'decimal';
-                document.getElementById('modal-import-config').classList.remove('hidden');
-            } else {
-                showToast(`Erreur: Format de fichier non reconnu.`);
+            let totalImportedFlights = 0;
+            let totalImportedExpenses = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const text = await file.text();
+                
+                let res = { flights: 0, expenses: 0 };
+                
+                // Détection du format
+                if (text.includes('=== REGISTRE DE VOLS ===')) {
+                    // Sauvegarde AeroLog: direct import
+                    res = parseBackupCSV(text);
+                } else if (text.includes('Numéro de flux') && text.includes('Compte imputé')) {
+                    // Fichier Club: ask for ATO and Format
+                    window.tempImportData = text;
+                    document.getElementById('import-ato-name').value = '';
+                    document.getElementById('import-time-format').value = 'decimal';
+                    document.getElementById('modal-import-config').classList.remove('hidden');
+                    event.target.value = ''; // Reset input
+                    return; // Pause processing until modal closes
+                } else {
+                    showToast(`Erreur: Format ignoré pour ${file.name}`);
+                    continue;
+                }
+                
+                totalImportedFlights += res.flights;
+                totalImportedExpenses += res.expenses;
             }
             
-            event.target.value = ''; // Reset input
+            // Met à jour le mois sélectionné avec le dernier apport importé si existant
+            if (totalImportedExpenses > 0 || totalImportedFlights > 0) {
+                 const allDates = [...window.state.purchases, ...window.state.flights].map(x => x.date).sort();
+                 if (allDates.length > 0) {
+                     window.state.selectedMonth = allDates[allDates.length - 1].slice(0, 7);
+                 }
+            }
+
+            renderApp();
+            await window.saveToLocalDB();
+            showToast(`${totalImportedFlights} vol(s) et ${totalImportedExpenses} apports/paramètres importés.`);
+            event.target.value = ''; 
         }
         
-        window.confirmImport = function() {
+        window.confirmImport = async function() {
             const atoName = document.getElementById('import-ato-name').value.trim();
             const timeFormat = document.getElementById('import-time-format').value;
             
             closeModals();
             
-            if(tempImportData) {
-                const res = parseAeroclubCSV(tempImportData, atoName, timeFormat);
-                updatePostImport(res);
-                tempImportData = null;
+            if(window.tempImportData) {
+                const res = parseAeroclubCSV(window.tempImportData, atoName, timeFormat);
+                
+                if (res.expenses > 0 || res.flights > 0) {
+                     const allDates = [...window.state.purchases, ...window.state.flights].map(x => x.date).sort();
+                     if (allDates.length > 0) {
+                         window.state.selectedMonth = allDates[allDates.length - 1].slice(0, 7);
+                     }
+                }
+                renderApp();
+                await window.saveToLocalDB();
+                showToast(`${res.flights} vol(s) et ${res.expenses} apports importés.`);
+                window.tempImportData = null;
             }
-        }
-        
-        async function updatePostImport(res) {
-            if (res.expenses > 0 || res.flights > 0) {
-                 const allDates = [...state.purchases, ...state.flights].map(x => x.date).sort();
-                 if (allDates.length > 0) {
-                     state.selectedMonth = allDates[allDates.length - 1].slice(0, 7);
-                 }
-            }
-            renderApp();
-            await saveDataToFirestore();
-            showToast(`${res.flights} vol(s) et ${res.expenses} apports/dépenses importés.`);
         }
 
         function parseAeroclubCSV(csv, atoName, timeFormat) {
@@ -1330,13 +1446,11 @@
                 
                 str = str.replace(/,/g, '.');
                 if (timeFormat === 'normal') {
-                    // Si l'utilisateur dit que 1.50 = 1h50m
                     const parts = str.split('.');
                     const h = parseInt(parts[0], 10) || 0;
                     const m = parseInt((parts[1] || '0').padEnd(2, '0').slice(0, 2), 10);
                     return h + (m / 60);
                 }
-                // Décimal par défaut
                 return parseFloat(str) || 0;
             };
 
@@ -1374,13 +1488,13 @@
                         landings = 1;
                     }
 
-                    const isDuplicate = state.flights.some(f => 
+                    const isDuplicate = window.state.flights.some(f => 
                         (f.fluxId && f.fluxId === fluxId) || 
                         (!f.fluxId && f.date === dateRaw && f.reg === reg && Math.abs(f.duration - duration) < 0.02 && f.cost === debit)
                     );
 
                     if (!isDuplicate) {
-                        state.flights.push({
+                        window.state.flights.push({
                             id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i + Math.floor(Math.random() * 10000),
                             fluxId: fluxId,
                             ato: atoName,
@@ -1417,13 +1531,13 @@
                     const title = category + " - " + titleDetail;
                     const cost = credit; 
                     
-                    const isDuplicateExp = state.purchases.some(p => 
+                    const isDuplicateExp = window.state.purchases.some(p => 
                         (p.fluxId && p.fluxId === fluxId) || 
                         (!p.fluxId && p.date === dateRaw && p.title === title && Math.abs(p.cost - cost) < 0.01)
                     );
 
                     if (!isDuplicateExp) {
-                        state.purchases.push({
+                        window.state.purchases.push({
                             id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i + Math.floor(Math.random() * 10000),
                             fluxId: fluxId,
                             ato: atoName,
@@ -1450,13 +1564,22 @@
                 const line = lines[i].trim();
                 if (!line) continue;
 
+                if (line.includes('=== PARAMETRES ===')) { mode = 'params'; continue; }
                 if (line.includes('=== REGISTRE DE VOLS ===')) { mode = 'flights'; continue; }
                 if (line.includes('=== ACHATS ET MATERIELS ===')) { mode = 'expenses'; continue; }
-                if (line.startsWith('Date,')) continue; 
+                if (line.startsWith('Date,') || line.startsWith('Cle,')) continue; 
 
                 const row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^"|"$/g, ''));
 
-                if (mode === 'flights' && row.length >= 12) {
+                if (mode === 'params' && row.length >= 2) {
+                    const key = row[0];
+                    const val = row[1];
+                    if (key === 'monthlyLimit') window.state.monthlyLimit = parseFloat(val) || 0;
+                    if (key === 'sepDate') window.state.sepDate = val;
+                    if (key === 'class1Date') window.state.class1Date = val;
+                    if (key === 'class2Date') window.state.class2Date = val;
+                }
+                else if (mode === 'flights' && row.length >= 12) {
                     const hasAto = row[1] !== '' && !row[1].match(/^[F|G]-/i) && row.length >= 13; 
                     
                     const date = row[0];
@@ -1475,13 +1598,13 @@
                     const cost = parseFloat(hasAto ? row[12] : row[11]);
                     const fluxId = (hasAto && row.length > 13) ? row[13] : ((!hasAto && row.length > 12) ? row[12] : '');
 
-                    const isDuplicate = state.flights.some(f => 
+                    const isDuplicate = window.state.flights.some(f => 
                         (f.fluxId && fluxId && f.fluxId === fluxId) || 
                         (!fluxId && f.date === date && Math.abs(f.duration - durationParsed) < 0.01)
                     );
 
                     if (!isDuplicate) {
-                        state.flights.push({
+                        window.state.flights.push({
                             id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i,
                             fluxId: fluxId,
                             ato: ato,
@@ -1510,13 +1633,13 @@
                     const costParsed = parseFloat(hasAto ? row[4] : row[3]);
                     const fluxId = hasAto ? (row[5] || '') : (row[4] || '');
                     
-                    const isDuplicateExp = state.purchases.some(p => 
+                    const isDuplicateExp = window.state.purchases.some(p => 
                         (p.fluxId && fluxId && p.fluxId === fluxId) || 
                         (!fluxId && p.date === date && p.title === title && Math.abs(p.cost - costParsed) < 0.01)
                     );
 
                     if (!isDuplicateExp) {
-                        state.purchases.push({
+                        window.state.purchases.push({
                             id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + i,
                             fluxId: fluxId,
                             ato: ato,
