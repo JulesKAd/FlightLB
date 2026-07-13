@@ -284,7 +284,7 @@
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Fonction</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Instructeur</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Coût</th>
-                                <th class="py-4 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="py-4 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50/95 backdrop-blur shadow-[inset_1px_0_0_#f3f4f6,-4px_0_10px_-4px_rgba(0,0,0,0.05)] z-10">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="full-flights-list" class="divide-y divide-gray-50">
@@ -320,7 +320,7 @@
                                 <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
                                 <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">ATO / Catégorie</th>
                                 <th class="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Montant</th>
-                                <th class="py-4 px-6 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="py-4 px-6 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50/95 backdrop-blur shadow-[inset_1px_0_0_#f3f4f6,-4px_0_10px_-4px_rgba(0,0,0,0.05)] z-10">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="full-expenses-list" class="divide-y divide-gray-50">
@@ -991,7 +991,7 @@
                     : `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">CdB</span>`;
                 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50/50 transition-colors text-sm">
+                    <tr class="hover:bg-gray-50/50 transition-colors text-sm group">
                         <td class="py-4 px-4 text-gray-500 whitespace-nowrap">${formatDate(f.date)}</td>
                         <td class="py-4 px-4 whitespace-nowrap">
                             <span class="font-medium text-gray-900">${f.reg}</span>
@@ -1010,13 +1010,13 @@
                         <td class="py-4 px-4 whitespace-nowrap text-center">${funcDisplay}</td>
                         <td class="py-4 px-4 whitespace-nowrap text-center text-gray-500 text-xs">${f.instructor || '-'}</td>
                         <td class="py-4 px-4 whitespace-nowrap text-right text-gray-500">${f.cost > 0 ? f.cost.toFixed(2) + ' €' : '-'}</td>
-                        <td class="py-4 px-4 whitespace-nowrap text-center">
+                        <td class="py-4 px-4 whitespace-nowrap text-center sticky right-0 bg-white/95 backdrop-blur shadow-[inset_1px_0_0_#f3f4f6,-4px_0_10px_-4px_rgba(0,0,0,0.05)] group-hover:bg-gray-50/95 transition-colors z-10">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openAddFlightModal('${f.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Modifier">
-                                    <i class="ph ph-pencil-simple"></i>
+                                <button onclick="openAddFlightModal('${f.id}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 p-1.5 rounded-md transition-colors" title="Modifier ce vol">
+                                    <i class="ph ph-pencil-simple text-lg"></i>
                                 </button>
-                                <button onclick="deleteFlight('${f.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Supprimer">
-                                    <i class="ph ph-trash"></i>
+                                <button onclick="deleteFlight('${f.id}')" class="text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 p-1.5 rounded-md transition-colors" title="Supprimer ce vol">
+                                    <i class="ph ph-trash text-lg"></i>
                                 </button>
                             </div>
                         </td>
@@ -1067,7 +1067,7 @@
                 }
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50/50 transition-colors text-sm">
+                    <tr class="hover:bg-gray-50/50 transition-colors text-sm group">
                         <td class="py-4 px-6 text-gray-500 whitespace-nowrap">${formatDate(p.date)}</td>
                         <td class="py-4 px-6 font-medium text-gray-900">${p.title}</td>
                         <td class="py-4 px-6 text-gray-500 text-xs">
@@ -1075,13 +1075,13 @@
                             <span class="px-2 py-0.5 mt-1 inline-block bg-gray-100 rounded-md text-xs">${p.category}</span>
                         </td>
                         <td class="py-4 px-6 text-right text-gray-900 whitespace-nowrap font-medium">${p.cost.toFixed(2)} €</td>
-                        <td class="py-4 px-6 text-center whitespace-nowrap">
-                            <div class="flex items-center justify-center gap-3">
-                                <button onclick="openAddExpenseModal('${p.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Modifier">
-                                    <i class="ph ph-pencil-simple"></i>
+                        <td class="py-4 px-6 text-center whitespace-nowrap sticky right-0 bg-white/95 backdrop-blur shadow-[inset_1px_0_0_#f3f4f6,-4px_0_10px_-4px_rgba(0,0,0,0.05)] group-hover:bg-gray-50/95 transition-colors z-10">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openAddExpenseModal('${p.id}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 p-1.5 rounded-md transition-colors" title="Modifier cette dépense">
+                                    <i class="ph ph-pencil-simple text-lg"></i>
                                 </button>
-                                <button onclick="deleteExpense('${p.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Supprimer">
-                                    <i class="ph ph-trash"></i>
+                                <button onclick="deleteExpense('${p.id}')" class="text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 p-1.5 rounded-md transition-colors" title="Supprimer cette dépense">
+                                    <i class="ph ph-trash text-lg"></i>
                                 </button>
                             </div>
                         </td>
