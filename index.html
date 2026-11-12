@@ -35,9 +35,10 @@
                 <div class="flex items-center gap-2">
                     <i class="ph ph-airplane text-2xl text-gray-900"></i>
                     <span class="font-semibold tracking-tight text-lg">AeroLog</span>
-                    <span id="sync-status" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium ml-2 transition-opacity opacity-0 flex items-center gap-1">
-                        <i class="ph-fill ph-hard-drives"></i> Local
+                    <span id="sync-status" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium ml-2 transition-colors flex items-center gap-1">
+                        <i class="ph-fill ph-arrows-clockwise animate-spin"></i> Connexion...
                     </span>
+                    <button id="btn-logout" onclick="logoutCloud()" class="hidden ml-2 text-[10px] text-gray-500 hover:text-red-600 underline">Déconnexion</button>
                 </div>
                 <div class="flex items-center space-x-6 text-sm">
                     <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-5 transition-colors tab-active">
@@ -62,11 +63,10 @@
             
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight">Bonjour, Pilote.</h1>
+                    <h1 id="greeting-name" class="text-2xl font-semibold tracking-tight">Bonjour, Pilote.</h1>
                     <p class="text-gray-500 text-sm mt-1">Résumé de votre activité aéronautique.</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    <!-- Import Input -->
                     <input type="file" id="import-file" accept=".csv" class="hidden" multiple onchange="handleImport(event)">
                     <button onclick="document.getElementById('import-file').click()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
                         <i class="ph ph-upload-simple"></i>
@@ -74,7 +74,7 @@
                     </button>
                     <button onclick="exportCSV()" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
                         <i class="ph ph-download-simple"></i>
-                        Sauvegarder
+                        Sauvegarder Local
                     </button>
                     <button onclick="switchTab('logbook'); openAddFlightModal()" class="bg-gray-900 text-white hover:bg-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
                         <i class="ph ph-plus"></i>
@@ -150,12 +150,27 @@
                         <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
                             <div id="budget-progress-bar" class="bg-gray-900 h-full transition-all duration-700 ease-out" style="width: 0%"></div>
                         </div>
-                        <!-- Alert box -->
                         <div id="budget-alert" class="hidden mt-3 text-red-600 text-xs flex items-center gap-1.5">
                             <i class="ph-fill ph-warning-circle"></i>
                             <span>Limite budgétaire dépassée.</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Custom Objectives (New Section) -->
+            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <div class="flex justify-between items-start mb-5">
+                    <div>
+                        <h2 class="text-sm font-medium text-gray-900">Objectifs Personnalisés</h2>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Suivi de vos formations, mûrissements, etc.</p>
+                    </div>
+                    <button onclick="openObjectiveModal()" class="text-xs bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <i class="ph ph-plus"></i> Nouvel objectif
+                    </button>
+                </div>
+                <div id="objectives-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Injected via JS -->
                 </div>
             </div>
 
@@ -189,34 +204,24 @@
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
                     <div class="flex justify-between items-start mb-5">
                         <div>
-                            <h2 class="text-sm font-medium text-gray-900">Qualif. & Médical</h2>
-                            <p class="text-[11px] text-gray-400 mt-0.5">Période SEP : <span id="proro-date-range" class="text-gray-600">--</span></p>
+                            <h2 class="text-sm font-medium text-gray-900">Qualifications</h2>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Suivi de vos échéances</p>
                         </div>
-                        <button onclick="openSettingsModal()" class="text-gray-400 hover:text-gray-900 transition-colors" title="Paramètres">
-                            <i class="ph ph-pencil-simple text-lg"></i>
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="openQualifModal()" class="text-xs bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 px-2 py-1.5 rounded-lg transition-colors flex items-center gap-1" title="Ajouter une qualification">
+                                <i class="ph ph-plus"></i> Ajouter
+                            </button>
+                            <button onclick="openSettingsModal()" class="text-gray-400 hover:text-gray-900 transition-colors" title="Paramètres Médical">
+                                <i class="ph ph-heartbeat text-xl"></i>
+                            </button>
+                        </div>
                     </div>
                     
-                    <div class="space-y-4">
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs"><span class="text-gray-500">Total (12h)</span><span id="proro-hours-text" class="font-medium">00:00 / 12h</span></div>
-                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-hours-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs"><span class="text-gray-500">Dont CdB (6h)</span><span id="proro-pic-text" class="font-medium">00:00 / 6h</span></div>
-                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-pic-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs"><span class="text-gray-500">Atterrissages (12)</span><span id="proro-ldgs-text" class="font-medium">0 / 12</span></div>
-                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-ldgs-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between text-xs"><span class="text-gray-500">Instructeur (1h)</span><span id="proro-inst-text" class="font-medium">00:00 / 1h</span></div>
-                            <div class="w-full bg-gray-100 h-1.5 rounded-full"><div id="proro-inst-bar" class="bg-gray-300 h-full transition-all duration-700" style="width: 0%"></div></div>
-                        </div>
+                    <div id="qualifications-list" class="space-y-4 flex-grow overflow-y-auto max-h-[400px] pr-2">
+                        <!-- Injected via JS -->
                     </div>
 
-                    <div class="mt-5 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
+                    <div class="mt-5 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 shrink-0">
                         <div>
                             <span class="block text-[11px] text-gray-500 mb-1 uppercase tracking-wider">Classe 1</span>
                             <span id="med-class1-status" class="text-xs font-medium text-gray-900">--</span>
@@ -259,13 +264,45 @@
 
         <!-- ==================== LOGBOOK VIEW ==================== -->
         <div id="view-logbook" class="hidden space-y-6">
-            <div class="flex justify-between items-end mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Carnet de Vol</h1>
                 </div>
-                <button onclick="openAddFlightModal()" class="text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors">
+                <button onclick="openAddFlightModal()" class="text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors shrink-0">
                     Nouveau vol
                 </button>
+            </div>
+
+            <!-- Barre de filtres -->
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Depuis le</label>
+                    <input type="date" id="filter-date-start" onchange="renderFullLogbook()" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:bg-white focus:border-gray-400 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jusqu'au</label>
+                    <input type="date" id="filter-date-end" onchange="renderFullLogbook()" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:bg-white focus:border-gray-400 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Machine</label>
+                    <input type="text" id="filter-reg" oninput="renderFullLogbook()" placeholder="Immat ou Type" class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:bg-white focus:border-gray-400 transition-colors w-32 uppercase">
+                </div>
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Recherche (Trajet, Cat, ATO...)</label>
+                    <div class="relative">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="filter-search" oninput="renderFullLogbook()" placeholder="Ex: LFPN, Mûrissement..." class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-3 py-1.5 text-sm outline-none focus:bg-white focus:border-gray-400 transition-colors">
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="resetFilters()" class="text-gray-500 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0 h-[34px]" title="Réinitialiser les filtres">
+                        <i class="ph ph-arrows-counter-clockwise text-lg"></i>
+                    </button>
+                    <button onclick="openBulkEditModal()" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shrink-0 h-[34px] text-sm font-medium" title="Modifier les vols filtrés en masse">
+                        <i class="ph ph-pencil-simple text-lg"></i>
+                        <span class="hidden sm:inline">Modifier sélection</span>
+                    </button>
+                </div>
             </div>
 
             <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
@@ -276,7 +313,7 @@
                             <tr class="bg-gray-50/80">
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Appareil</th>
-                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ATO / Cat.</th>
+                                <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cat. / Objectif</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trajet</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Temps</th>
                                 <th class="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Touchés</th>
@@ -346,13 +383,170 @@
         </button>
     </div>
 
-    <!-- Toast Notification (Centered bottom to not overlap scroll buttons) -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-xl transform transition-transform duration-300 translate-y-24 opacity-0 flex items-center gap-3 z-[70]">
-        <i class="ph-fill ph-check-circle text-emerald-400 text-xl"></i>
-        <span id="toast-message" class="text-sm font-medium">Action réussie</span>
-    </div>
 
     <!-- ==================== MODALS ==================== -->
+
+    <!-- Firebase Auth Modal (NEW) -->
+    <div id="modal-auth" class="fixed inset-0 bg-gray-900/95 backdrop-blur-md z-[100] flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden transform transition-all">
+            <div class="p-8">
+                <div class="flex flex-col items-center gap-2 mb-8 justify-center">
+                    <div class="bg-indigo-50 p-3 rounded-full mb-2">
+                        <i class="ph ph-airplane-tilt text-3xl text-indigo-600"></i>
+                    </div>
+                    <span class="font-bold tracking-tight text-xl">AeroLog Cloud</span>
+                    <span class="text-xs text-gray-500 text-center">Synchronisez vos carnets sur tous vos appareils.</span>
+                </div>
+                <form id="form-auth" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Adresse Email</label>
+                        <input type="email" id="auth-email" required placeholder="pilote@email.com" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-400 rounded-lg px-4 py-2.5 text-sm outline-none transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">Mot de passe</label>
+                        <input type="password" id="auth-password" required minlength="6" placeholder="••••••••" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-400 rounded-lg px-4 py-2.5 text-sm outline-none transition-colors">
+                    </div>
+                    <div id="auth-error" class="hidden bg-red-50 text-red-600 border border-red-100 p-3 rounded-lg text-xs font-medium text-center"></div>
+                    <div class="pt-4 space-y-3">
+                        <button type="submit" id="btn-login" class="w-full bg-gray-900 text-white hover:bg-gray-800 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">Se connecter</button>
+                        <button type="button" onclick="handleRegister()" id="btn-register" class="w-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors">Créer mon compte</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Edit Modal -->
+    <div id="modal-bulk-edit" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-xl max-h-[90vh]">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
+                <h3 class="font-medium text-lg flex items-center gap-2"><i class="ph ph-stack"></i> Modification en masse</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            
+            <form id="form-bulk-edit" onsubmit="applyBulkEdit(event)" class="p-6 space-y-5 overflow-y-auto">
+                <p id="bulk-edit-count" class="text-sm text-indigo-700 bg-indigo-50 p-3 rounded-lg border border-indigo-100 mb-2">
+                    Vous allez modifier X vols.
+                </p>
+                <p class="text-xs text-gray-500 mb-4">Cochez uniquement les champs que vous souhaitez remplacer pour tous les vols filtrés.</p>
+
+                <!-- Type d'appareil -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="bulk-check-type" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" onchange="document.getElementById('bulk-val-type').disabled = !this.checked">
+                    <label class="text-xs font-medium text-gray-700 w-24">Type (Avion)</label>
+                    <input type="text" id="bulk-val-type" disabled placeholder="Ex: DR400, TB20..." class="flex-grow bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-1.5 text-sm uppercase transition-colors outline-none disabled:opacity-50">
+                </div>
+
+                <!-- ATO -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="bulk-check-ato" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" onchange="document.getElementById('bulk-val-ato').disabled = !this.checked">
+                    <label class="text-xs font-medium text-gray-700 w-24">ATO / Club</label>
+                    <input type="text" id="bulk-val-ato" disabled placeholder="Nom du club..." class="flex-grow bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-1.5 text-sm transition-colors outline-none disabled:opacity-50">
+                </div>
+                
+                <!-- Catégorie -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="bulk-check-category" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" onchange="document.getElementById('bulk-val-category').disabled = !this.checked">
+                    <label class="text-xs font-medium text-gray-700 w-24">Catégorie</label>
+                    <input type="text" id="bulk-val-category" disabled placeholder="Ex: Mûrissement, PPL..." class="flex-grow bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-1.5 text-sm transition-colors outline-none disabled:opacity-50">
+                </div>
+
+                <!-- Objectif -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="bulk-check-objective" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" onchange="document.getElementById('bulk-val-objective').disabled = !this.checked">
+                    <label class="text-xs font-medium text-gray-700 w-24">Tag Objectif</label>
+                    <select id="bulk-val-objective" disabled class="flex-grow bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-1.5 text-sm transition-colors outline-none disabled:opacity-50 text-indigo-900">
+                        <!-- Injected by JS -->
+                    </select>
+                </div>
+
+                <!-- Fonction -->
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="bulk-check-function" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" onchange="document.getElementById('bulk-val-function').disabled = !this.checked">
+                    <label class="text-xs font-medium text-gray-700 w-24">Fonction</label>
+                    <select id="bulk-val-function" disabled class="flex-grow bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-1.5 text-sm transition-colors outline-none disabled:opacity-50">
+                        <option value="CdB">Commandant de Bord (CdB)</option>
+                        <option value="EP">Élève Pilote (EP) / DC</option>
+                    </select>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 shrink-0">
+                    <button type="button" onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="bg-indigo-600 text-white hover:bg-indigo-700 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Appliquer aux vols</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Qualif Modal -->
+    <div id="modal-qualif" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <h3 id="modal-qualif-title" class="font-medium text-lg">Qualification</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-qualif" onsubmit="saveQualif(event)" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Nom (ex: SEP, IR, MEP...)</label>
+                    <input type="text" id="qualif-title" required placeholder="Titre" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Date d'expiration</label>
+                    <input type="date" id="qualif-expiry" required class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div class="flex items-start gap-2 mt-2 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                    <input type="checkbox" id="qualif-track-sep" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                    <label for="qualif-track-sep" class="text-xs text-indigo-900 leading-relaxed cursor-pointer">Activer le suivi d'expérience type "SEP" (Affiche les 12h et 12 atterrissages requis dans les 12 mois avant l'expiration)</label>
+                </div>
+                <div class="mt-6 flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeModals()" class="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Objective Modal -->
+    <div id="modal-objective" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-xl">
+            <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100">
+                <h3 id="modal-objective-title" class="font-medium text-lg">Objectif</h3>
+                <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <form id="form-add-objective" onsubmit="saveObjective(event)" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Titre de l'objectif (ex: CPL, Mûrissement...)</label>
+                    <input type="text" id="objective-title" required placeholder="Titre" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1.5">Objectif en heures (Hdv)</label>
+                    <input type="number" id="objective-target" required min="1" step="1" placeholder="ex: 150" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-700 mb-1.5">Vols comptabilisés</label>
+                        <select id="objective-scope" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-2 py-2 text-xs transition-colors outline-none">
+                            <option value="tagged">Vols taggués</option>
+                            <option value="global">Tout le carnet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-gray-700 mb-1.5">Type d'heures filtrées</label>
+                        <select id="objective-hour-type" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-2 py-2 text-xs transition-colors outline-none">
+                            <option value="all">Toutes (Total)</option>
+                            <option value="cdb">CdB (PIC)</option>
+                            <option value="ep">Instruction (EP)</option>
+                            <option value="nuit">De Nuit</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end gap-3 pt-2 border-t border-gray-100">
+                    <button type="button" onclick="closeModals()" class="mt-4 px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Annuler</button>
+                    <button type="submit" class="mt-4 bg-gray-900 text-white hover:bg-gray-800 px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Import Config Modal -->
     <div id="modal-import-config" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -383,7 +577,7 @@
     
     <!-- Add/Edit Flight Modal -->
     <div id="modal-flight" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-3xl flex flex-col shadow-xl max-h-[95vh]">
+        <div class="bg-white rounded-2xl w-full max-w-4xl flex flex-col shadow-xl max-h-[95vh]">
             <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
                 <h3 id="modal-flight-title" class="font-medium text-lg">Enregistrer un vol</h3>
                 <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
@@ -409,17 +603,24 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                     <div>
                         <label class="block text-xs text-gray-500 mb-1.5">Catégorie</label>
-                        <input list="flight-categories" id="flight-category" required placeholder="PPL, CPL..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        <input list="flight-categories" id="flight-category" required placeholder="PPL, Local..." class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
                         <datalist id="flight-categories">
+                            <option value="Local">
+                            <option value="Navigation">
                             <option value="PPL">
                             <option value="CPL">
-                            <option value="IFR">
-                            <option value="Mûrissement">
                             <option value="Prorogation">
                         </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1.5 text-indigo-600 font-medium">Tag Objectif</label>
+                        <select id="flight-objective" class="w-full bg-indigo-50/50 border border-indigo-100 focus:bg-white focus:border-indigo-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none text-indigo-900">
+                            <option value="">Aucun objectif</option>
+                            <!-- Injected by JS -->
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1.5">Départ (OACI)</label>
@@ -477,6 +678,7 @@
 
     <!-- Add/Edit Expense Modal -->
     <div id="modal-expense" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <!-- ... existing expense modal ... -->
         <div class="bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-xl max-h-[90vh]">
             <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
                 <h3 id="modal-expense-title" class="font-medium text-lg">Saisir une dépense perso</h3>
@@ -525,12 +727,26 @@
     <div id="modal-budget" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md flex flex-col shadow-xl max-h-[90vh]">
             <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 shrink-0">
-                <h3 class="font-medium text-lg">Paramètres & Qualifications</h3>
+                <h3 class="font-medium text-lg">Paramètres & Médical</h3>
                 <button onclick="closeModals()" class="text-gray-400 hover:text-gray-900 transition-colors"><i class="ph ph-x text-xl"></i></button>
             </div>
             
             <form id="form-budget" onsubmit="saveSettings(event)" class="p-6 space-y-6 overflow-y-auto">
                 <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Profil</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1.5">Prénom</label>
+                            <input type="text" id="profile-firstname" placeholder="Ex: Jean" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1.5">Nom</label>
+                            <input type="text" id="profile-lastname" placeholder="Ex: Dupont" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-3 py-2 text-sm transition-colors outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4 border-t border-gray-100 pt-4">
                     <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Finances</h4>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1.5">Limite de dépenses mensuelle (€)</label>
@@ -539,11 +755,7 @@
                 </div>
 
                 <div class="space-y-4 border-t border-gray-100 pt-4">
-                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Médical & Licences</h4>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-1.5">Date d'obtention/Prorogation SEP</label>
-                        <input type="date" id="sep-date-input" class="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-400 rounded-lg px-4 py-2 text-sm transition-colors outline-none">
-                    </div>
+                    <h4 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Médical</h4>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1.5">Expiration Classe 1</label>
@@ -570,27 +782,117 @@
         <span id="toast-message" class="text-sm font-medium">Action réussie</span>
     </div>
 
-    <!-- Script Application -->
+    <!-- FIREBASE AND SCRIPT LOGIC -->
     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Configuration Firebase (Issue de votre compte)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDNHsLkwdquuFPWL5VqZu155RfPiHn-hsw",
+          authDomain: "aerolog-cloud.firebaseapp.com",
+          projectId: "aerolog-cloud",
+          storageBucket: "aerolog-cloud.firebasestorage.app",
+          messagingSenderId: "523716722239",
+          appId: "1:523716722239:web:52f33d0ff305181743428a"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         // --- State Management ---
         window.state = {
+            firstName: '',
+            lastName: '',
             monthlyLimit: 300,
-            sepDate: '2024-05-15',
             class1Date: '',
             class2Date: '',
             flights: [],
             purchases: [],
+            objectives: [], 
+            qualifications: [], 
             selectedMonth: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
             editingFlightId: null,
-            editingExpenseId: null
+            editingExpenseId: null,
+            editingObjectiveId: null, 
+            editingQualifId: null
         };
         
         window.tempImportData = null; 
-        
-        // --- Local DB (IndexedDB) Fallback ---
+        window.currentUser = null;
+
+        // --- AUTHENTIFICATION ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                window.currentUser = user;
+                document.getElementById('modal-auth').classList.add('hidden');
+                updateSyncBadge(true, user.email);
+                await loadFromCloud();
+                renderApp();
+            } else {
+                window.currentUser = null;
+                updateSyncBadge(false);
+                document.getElementById('modal-auth').classList.remove('hidden');
+            }
+        });
+
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const pwd = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+            try {
+                errorEl.classList.add('hidden');
+                await signInWithEmailAndPassword(auth, email, pwd);
+            } catch(e) {
+                errorEl.textContent = "Erreur : Identifiants invalides.";
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        window.handleRegister = async function() {
+            const email = document.getElementById('auth-email').value;
+            const pwd = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+            if(!email || pwd.length < 6) {
+                errorEl.textContent = "Email requis et mot de passe de 6 caractères minimum.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            try {
+                errorEl.classList.add('hidden');
+                await createUserWithEmailAndPassword(auth, email, pwd);
+            } catch(e) {
+                errorEl.textContent = "Erreur : " + (e.code === 'auth/email-already-in-use' ? 'Email déjà utilisé.' : e.message);
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        window.logoutCloud = function() {
+            signOut(auth);
+        }
+
+        function updateSyncBadge(isCloud, email = "") {
+            const badge = document.getElementById('sync-status');
+            const btnLogout = document.getElementById('btn-logout');
+            if (isCloud) {
+                badge.className = "text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium ml-2 flex items-center gap-1 shadow-sm";
+                badge.innerHTML = `<i class="ph-fill ph-cloud-check"></i> Cloud actif`;
+                btnLogout.classList.remove('hidden');
+                btnLogout.title = "Connecté en tant que : " + email;
+            } else {
+                badge.className = "text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium ml-2 flex items-center gap-1";
+                badge.innerHTML = `<i class="ph-fill ph-cloud-slash"></i> Déconnecté`;
+                btnLogout.classList.add('hidden');
+            }
+        }
+
+        // --- CLOUD SYNC & LOCAL FALLBACK ---
         window.initLocalDB = function() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open('AeroLogDB', 2); // Upgraded version
+                const request = indexedDB.open('AeroLogDB', 4);
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('appState')) {
@@ -620,24 +922,71 @@
                     req.onerror = () => resolve(null);
                 });
                 if (data) {
+                    window.state.firstName = data.firstName || '';
+                    window.state.lastName = data.lastName || '';
                     window.state.flights = data.flights || [];
                     window.state.purchases = data.purchases || [];
+                    window.state.objectives = data.objectives || [];
                     window.state.monthlyLimit = data.monthlyLimit || 300;
-                    window.state.sepDate = data.sepDate || '';
                     window.state.class1Date = data.class1Date || '';
                     window.state.class2Date = data.class2Date || '';
+                    if (data.sepDate && (!data.qualifications || data.qualifications.length === 0)) {
+                        const sepExp = new Date(data.sepDate);
+                        sepExp.setFullYear(sepExp.getFullYear() + 2);
+                        data.qualifications = [{
+                            id: 'legacy-sep', title: 'SEP (Migrée)', expiryDate: sepExp.toISOString().split('T')[0], trackSEP: true
+                        }];
+                        delete data.sepDate;
+                    }
+                    window.state.qualifications = data.qualifications || [];
                     if(data.selectedMonth) window.state.selectedMonth = data.selectedMonth;
                 }
             } catch(e) { console.error("IndexedDB load error", e); }
         };
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await window.loadFromLocalDB();
-            renderApp();
-            const syncBadge = document.getElementById('sync-status');
-            syncBadge.classList.remove('opacity-0');
-            syncBadge.classList.add('opacity-100');
-        });
+        window.saveToCloud = async function() {
+            // Toujours faire un backup local par sécurité
+            await window.saveToLocalDB();
+            if (!window.currentUser) return;
+            try {
+                const userRef = doc(db, "users", window.currentUser.uid);
+                await setDoc(userRef, { data: JSON.stringify(window.state) });
+            } catch (e) {
+                console.error("Erreur Cloud Sync:", e);
+                showToast("Erreur de synchronisation Cloud");
+            }
+        };
+
+        window.loadFromCloud = async function() {
+            if (!window.currentUser) return;
+            try {
+                const userRef = doc(db, "users", window.currentUser.uid);
+                const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) {
+                    const data = JSON.parse(docSnap.data().data);
+                    window.state.firstName = data.firstName || '';
+                    window.state.lastName = data.lastName || '';
+                    window.state.flights = data.flights || [];
+                    window.state.purchases = data.purchases || [];
+                    window.state.objectives = data.objectives || [];
+                    window.state.monthlyLimit = data.monthlyLimit || 300;
+                    window.state.class1Date = data.class1Date || '';
+                    window.state.class2Date = data.class2Date || '';
+                    window.state.qualifications = data.qualifications || [];
+                    if(data.selectedMonth) window.state.selectedMonth = data.selectedMonth;
+                } else {
+                    // MIGRATION : S'il n'y a rien sur le Cloud, on charge le local et on le pousse sur le cloud !
+                    await window.loadFromLocalDB();
+                    await window.saveToCloud();
+                    if(window.state.flights.length > 0) {
+                        showToast("Vos données locales ont été migrées vers le Cloud !");
+                    }
+                }
+            } catch (e) {
+                console.error("Erreur Cloud Load:", e);
+                await window.loadFromLocalDB(); // Fallback
+            }
+        };
 
         // --- Navigation ---
         window.switchTab = function(tabId) {
@@ -652,6 +1001,11 @@
 
         // --- Core Rendering Logic ---
         window.renderApp = function() {
+            const fName = window.state.firstName || '';
+            const lName = window.state.lastName || '';
+            const fullName = (fName || lName) ? `${fName} ${lName}`.trim() : 'Pilote';
+            document.getElementById('greeting-name').textContent = `Bonjour, ${fullName}.`;
+
             window.state.flights.sort((a, b) => new Date(b.date) - new Date(a.date));
             window.state.purchases.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -738,11 +1092,93 @@
                 alertBox.classList.add('hidden');
             }
 
+            renderObjectives();
             renderChart();
             renderQualifications();
             renderFleetStats();
             renderFullLogbook();
             renderExpenses();
+            updateObjectiveDropdowns(); 
+        }
+
+        window.renderObjectives = function() {
+            const container = document.getElementById('objectives-list');
+            container.innerHTML = '';
+            
+            if (window.state.objectives.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl">Aucun objectif défini. Cliquez sur "Nouvel objectif".</div>';
+                return;
+            }
+
+            window.state.objectives.forEach(obj => {
+                const scope = obj.scope || 'tagged';
+                const hourType = obj.hourType || 'all';
+
+                let currentHours = 0;
+                window.state.flights.forEach(f => {
+                    if (scope === 'tagged' && f.objectiveId !== obj.id) return;
+                    if (hourType === 'cdb' && f.function !== 'CdB') return;
+                    if (hourType === 'ep' && f.function !== 'EP') return;
+                    if (hourType === 'nuit' && f.condition !== 'Nuit') return;
+
+                    currentHours += parseFloat(f.duration);
+                });
+
+                let percentage = Math.min((currentHours / obj.targetHours) * 100, 100);
+                let isCompleted = currentHours >= obj.targetHours;
+                
+                let subtitleParts = [];
+                subtitleParts.push(scope === 'global' ? "Global" : "Tag");
+                if (hourType === 'cdb') subtitleParts.push("CdB");
+                else if (hourType === 'ep') subtitleParts.push("EP");
+                else if (hourType === 'nuit') subtitleParts.push("Nuit");
+                let subtitle = subtitleParts.join(" • ");
+                
+                container.innerHTML += `
+                    <div class="border border-gray-100 bg-gray-50/30 rounded-xl p-4 relative group hover:shadow-sm hover:border-gray-200 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <span class="text-xs font-semibold ${isCompleted ? 'text-emerald-700 bg-emerald-100' : 'text-indigo-700 bg-indigo-100'} px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                                        <i class="ph-fill ${isCompleted ? 'ph-check-circle' : 'ph-hash'}"></i> ${obj.title}
+                                    </span>
+                                    <span class="block text-[10px] text-gray-400 mt-1 ml-1">${subtitle}</span>
+                                </div>
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 -mt-1">
+                                    <button onclick="openObjectiveModal('${obj.id}')" class="text-gray-400 hover:text-blue-600 bg-white shadow-sm p-1 rounded-md"><i class="ph ph-pencil-simple"></i></button>
+                                    <button onclick="deleteObjective('${obj.id}')" class="text-gray-400 hover:text-red-600 bg-white shadow-sm p-1 rounded-md"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1.5 mt-2">
+                                <span class="text-gray-500 font-medium">Progression</span>
+                                <span class="font-bold ${isCompleted ? 'text-emerald-600' : 'text-gray-900'}">${formatTime(currentHours)} / ${obj.targetHours}h</span>
+                            </div>
+                            <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden shadow-inner">
+                                <div class="${isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'} h-full transition-all duration-1000 ease-out" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        window.updateObjectiveDropdowns = function() {
+            const selectFlight = document.getElementById('flight-objective');
+            const selectBulk = document.getElementById('bulk-val-objective');
+            
+            const currentValFlight = selectFlight.value;
+            const currentValBulk = selectBulk ? selectBulk.value : '';
+
+            const optionsHTML = '<option value="">Aucun objectif (Standard)</option>' + 
+                window.state.objectives.map(obj => `<option value="${obj.id}">#${obj.title} (${obj.targetHours}h)</option>`).join('');
+
+            selectFlight.innerHTML = optionsHTML;
+            if (selectBulk) selectBulk.innerHTML = optionsHTML;
+            
+            if (window.state.objectives.find(o => o.id === currentValFlight)) selectFlight.value = currentValFlight;
+            if (selectBulk && window.state.objectives.find(o => o.id === currentValBulk)) selectBulk.value = currentValBulk;
         }
 
         window.renderFleetStats = function() {
@@ -811,7 +1247,6 @@
                 }
             }
             
-            // Allow horizontal scroll for large spans
             container.style.minWidth = span > 12 ? (span * 35) + 'px' : '100%';
             
             const chartData = {};
@@ -834,7 +1269,6 @@
                 if(chartData[m].hours > maxHours) maxHours = chartData[m].hours;
             });
             
-            // Render Bars
             months.forEach(m => {
                 const data = chartData[m];
                 const hPercent = maxHours > 0 ? (data.hours / maxHours) * 100 : 0;
@@ -860,41 +1294,90 @@
         }
 
         window.renderQualifications = function() {
-            // Prorogation SEP
-            let proroRangeText = '--';
-            let hours12 = 0, hoursPic = 0, landings = 0, hoursInst = 0;
+            const container = document.getElementById('qualifications-list');
+            container.innerHTML = '';
 
-            if (window.state.sepDate) {
-                const sepDateObj = new Date(window.state.sepDate);
-                const today = new Date(); 
-                
-                let expiryDate = new Date(sepDateObj);
-                while (expiryDate <= today) {
-                    expiryDate.setFullYear(expiryDate.getFullYear() + 2);
-                }
-                
-                const startDate = new Date(expiryDate);
-                startDate.setFullYear(startDate.getFullYear() - 1);
+            if (!window.state.qualifications || window.state.qualifications.length === 0) {
+                container.innerHTML = '<div class="text-center text-xs text-gray-400 py-6 border border-dashed border-gray-200 rounded-xl">Aucune qualification ajoutée. Cliquez sur "Ajouter".</div>';
+            } else {
+                const sortedQualifs = [...window.state.qualifications].sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
-                proroRangeText = `${formatDate(startDate)} - ${formatDate(expiryDate)}`;
-
-                window.state.flights.forEach(f => {
-                    const fDate = new Date(f.date);
-                    if (fDate >= startDate && fDate <= expiryDate) {
-                        hours12 += f.duration;
-                        landings += f.landings || 0;
-                        if (f.function === 'CdB') hoursPic += f.duration;
-                        if (f.function === 'EP') hoursInst += f.duration;
+                sortedQualifs.forEach(q => {
+                    const expDate = new Date(q.expiryDate);
+                    const todayMidnight = new Date();
+                    todayMidnight.setHours(0,0,0,0);
+                    
+                    const diffTime = expDate - todayMidnight;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let statusClass = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                    let statusText = `Expire le ${formatDate(q.expiryDate)}`;
+                    
+                    if (diffDays < 0) {
+                        statusClass = 'text-red-700 bg-red-50 border-red-200 font-bold';
+                        statusText = `Expirée (${formatDate(q.expiryDate)})`;
+                    } else if (diffDays <= 45) {
+                        statusClass = 'text-amber-700 bg-amber-50 border-amber-200 font-bold';
+                        statusText = `Expire bientôt (${formatDate(q.expiryDate)})`;
                     }
+
+                    let trackingHtml = '';
+                    if (q.trackSEP) {
+                        const startDate = new Date(expDate);
+                        startDate.setFullYear(startDate.getFullYear() - 1);
+                        
+                        let hours12 = 0, hoursPic = 0, landings = 0, hoursInst = 0;
+                        window.state.flights.forEach(f => {
+                            const fDate = new Date(f.date);
+                            if (fDate >= startDate && fDate <= expDate) {
+                                hours12 += f.duration;
+                                landings += f.landings || 0;
+                                if (f.function === 'CdB') hoursPic += f.duration;
+                                if (f.function === 'EP') hoursInst += f.duration;
+                            }
+                        });
+
+                        const getProgressHtml = (label, current, max, isTime) => {
+                            let percentage = Math.min((current / max) * 100, 100);
+                            let text = isTime ? `${formatTime(current)} / ${max}h` : `${current} / ${max}`;
+                            let barClass = percentage >= 100 ? 'bg-gray-900' : 'bg-gray-300';
+                            return `
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-[10px]"><span class="text-gray-500">${label}</span><span class="font-medium">${text}</span></div>
+                                <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden"><div class="${barClass} h-full transition-all duration-700" style="width: ${percentage}%"></div></div>
+                            </div>
+                            `;
+                        };
+
+                        trackingHtml = `
+                            <div class="mt-3 pt-3 border-t border-gray-100 space-y-2.5">
+                                <div class="text-[10px] font-semibold uppercase tracking-wide text-indigo-500 mb-1">Expérience (depuis le ${formatDate(startDate)})</div>
+                                ${getProgressHtml('Total (12h)', hours12, 12, true)}
+                                ${getProgressHtml('Dont CdB (6h)', hoursPic, 6, true)}
+                                ${getProgressHtml('Atterrissages (12)', landings, 12, false)}
+                                ${getProgressHtml('Instructeur (1h)', hoursInst, 1, true)}
+                            </div>
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <div class="border border-gray-100 bg-white rounded-xl p-3 shadow-sm relative group hover:border-gray-200 transition-colors">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="font-bold text-sm text-gray-900">${q.title}</span>
+                                    <span class="block mt-1 text-[10px] border px-2 py-0.5 rounded-md w-fit shadow-sm ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                    <button onclick="openQualifModal('${q.id}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 p-1 rounded-md transition-all"><i class="ph ph-pencil-simple"></i></button>
+                                    <button onclick="deleteQualif('${q.id}')" class="text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-white border border-transparent hover:border-gray-200 p-1 rounded-md transition-all"><i class="ph ph-trash"></i></button>
+                                </div>
+                            </div>
+                            ${trackingHtml}
+                        </div>
+                    `;
                 });
             }
-            document.getElementById('proro-date-range').textContent = proroRangeText;
-            updateProgress('proro-hours', hours12, 12, true);
-            updateProgress('proro-pic', hoursPic, 6, true);
-            updateProgress('proro-ldgs', landings, 12, false);
-            updateProgress('proro-inst', hoursInst, 1, true);
 
-            // Médical
             const renderMedStatus = (dateStr, elementId) => {
                 const el = document.getElementById(elementId);
                 if (!dateStr) {
@@ -924,21 +1407,29 @@
             renderMedStatus(window.state.class1Date, 'med-class1-status');
             renderMedStatus(window.state.class2Date, 'med-class2-status');
         }
+        
+        window.getFilteredFlights = function() {
+            const filterStart = document.getElementById('filter-date-start').value;
+            const filterEnd = document.getElementById('filter-date-end').value;
+            const filterReg = document.getElementById('filter-reg').value.toUpperCase().trim();
+            const filterSearch = document.getElementById('filter-search').value.toLowerCase().trim();
 
-        window.updateProgress = function(idPrefix, current, max, isTime = true) {
-            const bar = document.getElementById(`${idPrefix}-bar`);
-            const text = document.getElementById(`${idPrefix}-text`);
-            let percentage = (current / max) * 100;
-            let clamped = Math.min(percentage, 100);
-            
-            if(isTime) {
-                text.textContent = `${formatTime(current)} / ${max}h`;
-            } else {
-                text.textContent = `${current} / ${max}`;
-            }
-            
-            bar.style.width = `${clamped}%`;
-            bar.className = percentage >= 100 ? "bg-gray-900 h-full transition-all duration-700" : "bg-gray-300 h-full transition-all duration-700";
+            return window.state.flights.filter(f => {
+                if (filterStart && f.date < filterStart) return false;
+                if (filterEnd && f.date > filterEnd) return false;
+                if (filterReg && !f.reg.includes(filterReg) && !f.type.includes(filterReg)) return false;
+                
+                if (filterSearch) {
+                    const searchStr = `${f.ato || ''} ${f.dep} ${f.arr} ${f.category || ''} ${f.condition} ${f.instructor || ''}`.toLowerCase();
+                    let objTitle = '';
+                    if (f.objectiveId) {
+                        const obj = window.state.objectives.find(o => o.id === f.objectiveId);
+                        if (obj) objTitle = obj.title.toLowerCase();
+                    }
+                    if (!searchStr.includes(filterSearch) && !objTitle.includes(filterSearch)) return false;
+                }
+                return true;
+            });
         }
 
         window.renderFullLogbook = function() {
@@ -946,8 +1437,11 @@
             const emptyState = document.getElementById('empty-state-flights');
             tbody.innerHTML = '';
 
-            if(window.state.flights.length === 0) {
+            let filteredFlights = window.getFilteredFlights();
+
+            if(filteredFlights.length === 0) {
                 emptyState.classList.remove('hidden');
+                emptyState.textContent = window.state.flights.length > 0 ? "Aucun vol ne correspond à vos filtres." : "Aucun vol enregistré.";
                 tbody.parentElement.classList.add('hidden');
                 return;
             } else {
@@ -957,14 +1451,13 @@
 
             let currentYear = '';
 
-            window.state.flights.forEach(f => {
+            filteredFlights.forEach(f => {
                 const fYear = f.date.substring(0, 4);
                 
-                // Grouping by Year
                 if (fYear !== currentYear) {
                     let yearHours = 0;
                     let yearCost = 0;
-                    window.state.flights.forEach(fy => {
+                    filteredFlights.forEach(fy => {
                         if(fy.date.substring(0,4) === fYear) {
                             yearHours += parseFloat(fy.duration);
                             yearCost += parseFloat(fy.cost);
@@ -987,9 +1480,17 @@
                 }
 
                 const funcDisplay = f.function === 'EP' 
-                    ? `<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">EP</span>` 
-                    : `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">CdB</span>`;
+                    ? `<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold uppercase tracking-wider">EP</span>` 
+                    : `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold uppercase tracking-wider">CdB</span>`;
                 
+                let objectiveTagHtml = '';
+                if (f.objectiveId) {
+                    const obj = window.state.objectives.find(o => o.id === f.objectiveId);
+                    if (obj) {
+                        objectiveTagHtml = `<span class="block mt-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded shadow-sm w-fit border border-indigo-100">#${obj.title}</span>`;
+                    }
+                }
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50/50 transition-colors text-sm group">
                         <td class="py-4 px-4 text-gray-500 whitespace-nowrap">${formatDate(f.date)}</td>
@@ -998,8 +1499,8 @@
                             <span class="text-gray-400 ml-1 text-xs">(${f.type})</span>
                         </td>
                         <td class="py-4 px-4 whitespace-nowrap text-gray-600 text-xs">
-                            ${f.ato ? `<span class="block font-medium text-gray-800">${f.ato}</span>` : ''}
-                            ${f.category || '-'}
+                            <span class="block font-medium text-gray-800">${f.category || '-'}</span>
+                            ${objectiveTagHtml}
                         </td>
                         <td class="py-4 px-4 whitespace-nowrap text-gray-600">${f.dep} &rarr; ${f.arr}</td>
                         <td class="py-4 px-4 whitespace-nowrap text-center font-medium text-gray-900">${formatTime(f.duration)}</td>
@@ -1044,7 +1545,6 @@
             window.state.purchases.forEach(p => {
                 const pYear = p.date.substring(0, 4);
                 
-                // Grouping by Year
                 if (pYear !== currentYear) {
                     let yearCost = 0;
                     window.state.purchases.forEach(py => {
@@ -1089,8 +1589,174 @@
                 `;
             });
         }
+        
+        window.resetFilters = function() {
+            document.getElementById('filter-date-start').value = '';
+            document.getElementById('filter-date-end').value = '';
+            document.getElementById('filter-reg').value = '';
+            document.getElementById('filter-search').value = '';
+            renderFullLogbook();
+        }
+        
+        // --- Modals & Crud Logic ---
+        window.openBulkEditModal = function() {
+            const filtered = window.getFilteredFlights();
+            if (filtered.length === 0) {
+                showToast("Erreur : Aucun vol à modifier avec les filtres actuels.");
+                return;
+            }
+            document.getElementById('bulk-edit-count').textContent = `Vous allez modifier les ${filtered.length} vols actuellement visibles.`;
+            document.getElementById('form-bulk-edit').reset();
+            
+            ['type', 'ato', 'category', 'objective', 'function'].forEach(key => {
+                document.getElementById(`bulk-val-${key}`).disabled = true;
+            });
 
-        // --- Interactions & Forms ---
+            document.getElementById('modal-bulk-edit').classList.remove('hidden');
+        }
+
+        window.applyBulkEdit = async function(event) {
+            event.preventDefault();
+            const filtered = window.getFilteredFlights();
+            
+            const updates = {};
+            if (document.getElementById('bulk-check-type').checked) updates.type = document.getElementById('bulk-val-type').value.toUpperCase();
+            if (document.getElementById('bulk-check-ato').checked) updates.ato = document.getElementById('bulk-val-ato').value.trim();
+            if (document.getElementById('bulk-check-category').checked) updates.category = document.getElementById('bulk-val-category').value.trim();
+            if (document.getElementById('bulk-check-objective').checked) updates.objectiveId = document.getElementById('bulk-val-objective').value || null;
+            if (document.getElementById('bulk-check-function').checked) updates.function = document.getElementById('bulk-val-function').value;
+
+            if (Object.keys(updates).length === 0) {
+                closeModals();
+                return;
+            }
+
+            if (!confirm(`Voulez-vous vraiment appliquer ces modifications à vos ${filtered.length} vols ? Cette action est irréversible.`)) return;
+
+            const filteredIds = new Set(filtered.map(f => f.id));
+            
+            window.state.flights = window.state.flights.map(f => {
+                if (filteredIds.has(f.id)) {
+                    return { ...f, ...updates };
+                }
+                return f;
+            });
+
+            closeModals();
+            renderApp();
+            await window.saveToCloud();
+            showToast(`${filtered.length} vol(s) mis à jour sur le Cloud.`);
+        }
+
+        window.openQualifModal = function(editId = null) {
+            window.state.editingQualifId = editId ? editId.toString() : null;
+            document.getElementById('modal-qualif-title').textContent = editId ? "Modifier la qualification" : "Nouvelle qualification";
+            
+            if (editId) {
+                const q = window.state.qualifications.find(x => x.id.toString() === window.state.editingQualifId);
+                if (q) {
+                    document.getElementById('qualif-title').value = q.title;
+                    document.getElementById('qualif-expiry').value = q.expiryDate;
+                    document.getElementById('qualif-track-sep').checked = !!q.trackSEP;
+                }
+            } else {
+                document.getElementById('form-add-qualif').reset();
+            }
+            document.getElementById('modal-qualif').classList.remove('hidden');
+        }
+
+        window.saveQualif = async function(event) {
+            event.preventDefault();
+            const qData = {
+                title: document.getElementById('qualif-title').value.trim(),
+                expiryDate: document.getElementById('qualif-expiry').value,
+                trackSEP: document.getElementById('qualif-track-sep').checked
+            };
+
+            const isEdit = !!window.state.editingQualifId;
+            qData.id = isEdit ? window.state.editingQualifId : (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            if (isEdit) {
+                const idx = window.state.qualifications.findIndex(o => o.id.toString() === qData.id);
+                if (idx !== -1) window.state.qualifications[idx] = { ...window.state.qualifications[idx], ...qData };
+            } else {
+                window.state.qualifications.push(qData);
+            }
+
+            closeModals();
+            renderApp();
+            await window.saveToCloud();
+            showToast(isEdit ? "Qualification modifiée." : "Qualification ajoutée.");
+        }
+        
+        window.deleteQualif = async function(id) {
+            if(confirm("Êtes-vous sûr de vouloir supprimer cette qualification ?")) {
+                const strId = id.toString();
+                window.state.qualifications = window.state.qualifications.filter(o => o.id.toString() !== strId);
+                renderApp(); 
+                await window.saveToCloud();
+                showToast("Qualification supprimée.");
+            }
+        }
+
+        window.openObjectiveModal = function(editId = null) {
+            window.state.editingObjectiveId = editId ? editId.toString() : null;
+            document.getElementById('modal-objective-title').textContent = editId ? "Modifier l'objectif" : "Nouvel objectif";
+            
+            if (editId) {
+                const obj = window.state.objectives.find(x => x.id.toString() === window.state.editingObjectiveId);
+                if (obj) {
+                    document.getElementById('objective-title').value = obj.title;
+                    document.getElementById('objective-target').value = obj.targetHours;
+                    document.getElementById('objective-scope').value = obj.scope || 'tagged';
+                    document.getElementById('objective-hour-type').value = obj.hourType || 'all';
+                }
+            } else {
+                document.getElementById('form-add-objective').reset();
+                document.getElementById('objective-scope').value = 'tagged';
+                document.getElementById('objective-hour-type').value = 'all';
+            }
+            document.getElementById('modal-objective').classList.remove('hidden');
+        }
+
+        window.saveObjective = async function(event) {
+            event.preventDefault();
+            const objData = {
+                title: document.getElementById('objective-title').value.trim(),
+                targetHours: parseInt(document.getElementById('objective-target').value) || 0,
+                scope: document.getElementById('objective-scope').value,
+                hourType: document.getElementById('objective-hour-type').value
+            };
+
+            const isEdit = !!window.state.editingObjectiveId;
+            objData.id = isEdit ? window.state.editingObjectiveId : (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
+
+            if (isEdit) {
+                const idx = window.state.objectives.findIndex(o => o.id.toString() === objData.id);
+                if (idx !== -1) window.state.objectives[idx] = { ...window.state.objectives[idx], ...objData };
+            } else {
+                window.state.objectives.push(objData);
+            }
+
+            closeModals();
+            renderApp();
+            await window.saveToCloud();
+            showToast(isEdit ? "Objectif modifié." : "Nouvel objectif ajouté.");
+        }
+        
+        window.deleteObjective = async function(id) {
+            if(confirm("Êtes-vous sûr de vouloir supprimer cet objectif ? Les vols associés perdront ce tag.")) {
+                const strId = id.toString();
+                window.state.objectives = window.state.objectives.filter(o => o.id.toString() !== strId);
+                window.state.flights.forEach(f => {
+                    if (f.objectiveId === strId) delete f.objectiveId;
+                });
+                renderApp(); 
+                await window.saveToCloud();
+                showToast("Objectif supprimé.");
+            }
+        }
+
         window.openAddFlightModal = function(editId = null) { 
             window.state.editingFlightId = editId ? editId.toString() : null;
             document.getElementById('modal-flight-title').textContent = editId ? "Modifier le vol" : "Enregistrer un vol";
@@ -1103,9 +1769,10 @@
                     document.getElementById('flight-reg').value = f.reg;
                     document.getElementById('flight-type').value = f.type;
                     document.getElementById('flight-category').value = f.category;
+                    document.getElementById('flight-objective').value = f.objectiveId || '';
                     document.getElementById('flight-dep').value = f.dep;
                     document.getElementById('flight-arr').value = f.arr;
-                    document.getElementById('flight-duration').value = formatTime(f.duration); // shows HH:MM
+                    document.getElementById('flight-duration').value = formatTime(f.duration);
                     document.getElementById('flight-landings').value = f.landings;
                     document.getElementById('flight-condition').value = f.condition;
                     document.getElementById('flight-function').value = f.function;
@@ -1121,55 +1788,6 @@
             document.getElementById('modal-flight').classList.remove('hidden'); 
         }
 
-        window.openAddExpenseModal = function(editId = null) { 
-            window.state.editingExpenseId = editId ? editId.toString() : null;
-            document.getElementById('modal-expense-title').textContent = editId ? "Modifier la dépense" : "Saisir une dépense perso";
-
-            if(editId) {
-                const p = window.state.purchases.find(x => x.id.toString() === window.state.editingExpenseId);
-                if(p) {
-                    document.getElementById('expense-date').value = p.date;
-                    document.getElementById('expense-ato').value = p.ato || '';
-                    document.getElementById('expense-title').value = p.title;
-                    document.getElementById('expense-category').value = p.category;
-                    document.getElementById('expense-cost').value = p.cost;
-                }
-            } else {
-                document.getElementById('form-add-expense').reset();
-                document.getElementById('expense-date').valueAsDate = new Date();
-            }
-            document.getElementById('modal-expense').classList.remove('hidden'); 
-        }
-        
-        window.openSettingsModal = function() {
-            document.getElementById('monthly-limit-input').value = window.state.monthlyLimit;
-            document.getElementById('sep-date-input').value = window.state.sepDate || '';
-            document.getElementById('class1-date-input').value = window.state.class1Date || '';
-            document.getElementById('class2-date-input').value = window.state.class2Date || '';
-            document.getElementById('modal-budget').classList.remove('hidden');
-        }
-
-        window.closeModals = function() {
-            document.getElementById('modal-flight').classList.add('hidden');
-            document.getElementById('modal-expense').classList.add('hidden');
-            document.getElementById('modal-budget').classList.add('hidden');
-            document.getElementById('modal-import-config').classList.add('hidden');
-        }
-
-        window.toggleInstructorField = function() {
-            const func = document.getElementById('flight-function').value;
-            const instContainer = document.getElementById('instructor-container');
-            const instInput = document.getElementById('flight-instructor');
-            if (func === 'EP') {
-                instContainer.classList.remove('hidden');
-                instInput.required = true;
-            } else {
-                instContainer.classList.add('hidden');
-                instInput.required = false;
-                instInput.value = '';
-            }
-        }
-
         window.saveFlight = async function(event) {
             event.preventDefault();
             const flightData = {
@@ -1178,6 +1796,7 @@
                 reg: document.getElementById('flight-reg').value.toUpperCase(),
                 type: document.getElementById('flight-type').value.toUpperCase(),
                 category: document.getElementById('flight-category').value,
+                objectiveId: document.getElementById('flight-objective').value || null,
                 dep: document.getElementById('flight-dep').value.toUpperCase(),
                 arr: document.getElementById('flight-arr').value.toUpperCase(),
                 duration: parseInputTime(document.getElementById('flight-duration').value),
@@ -1191,7 +1810,6 @@
             const isEdit = !!window.state.editingFlightId;
             flightData.id = isEdit ? window.state.editingFlightId : (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString());
 
-            // Propagation du type (Modèle d'appareil)
             if (flightData.type && flightData.type !== 'A DÉFINIR' && flightData.type !== '') {
                 window.state.flights.forEach(f => {
                     if (f.reg === flightData.reg && (f.type === 'A DÉFINIR' || f.type === '')) {
@@ -1211,8 +1829,28 @@
 
             closeModals();
             renderApp();
-            await window.saveToLocalDB();
-            showToast(isEdit ? "Vol modifié." : "Nouveau vol enregistré.");
+            await window.saveToCloud();
+            showToast(isEdit ? "Vol modifié dans le cloud." : "Nouveau vol sauvegardé dans le cloud.");
+        }
+        
+        window.openAddExpenseModal = function(editId = null) { 
+            window.state.editingExpenseId = editId ? editId.toString() : null;
+            document.getElementById('modal-expense-title').textContent = editId ? "Modifier la dépense" : "Saisir une dépense perso";
+
+            if(editId) {
+                const p = window.state.purchases.find(x => x.id.toString() === window.state.editingExpenseId);
+                if(p) {
+                    document.getElementById('expense-date').value = p.date;
+                    document.getElementById('expense-ato').value = p.ato || '';
+                    document.getElementById('expense-title').value = p.title;
+                    document.getElementById('expense-category').value = p.category;
+                    document.getElementById('expense-cost').value = p.cost;
+                }
+            } else {
+                document.getElementById('form-add-expense').reset();
+                document.getElementById('expense-date').valueAsDate = new Date();
+            }
+            document.getElementById('modal-expense').classList.remove('hidden'); 
         }
 
         window.saveExpense = async function(event) {
@@ -1239,21 +1877,56 @@
             
             closeModals();
             renderApp();
-            await window.saveToLocalDB();
+            await window.saveToCloud();
             showToast(isEdit ? "Dépense modifiée." : "Nouvelle dépense enregistrée.");
+        }
+
+        window.openSettingsModal = function() {
+            document.getElementById('profile-firstname').value = window.state.firstName || '';
+            document.getElementById('profile-lastname').value = window.state.lastName || '';
+            document.getElementById('monthly-limit-input').value = window.state.monthlyLimit;
+            document.getElementById('class1-date-input').value = window.state.class1Date || '';
+            document.getElementById('class2-date-input').value = window.state.class2Date || '';
+            document.getElementById('modal-budget').classList.remove('hidden');
         }
 
         window.saveSettings = async function(event) {
             event.preventDefault();
+            window.state.firstName = document.getElementById('profile-firstname').value.trim();
+            window.state.lastName = document.getElementById('profile-lastname').value.trim();
             window.state.monthlyLimit = parseFloat(document.getElementById('monthly-limit-input').value) || 0;
-            window.state.sepDate = document.getElementById('sep-date-input').value;
             window.state.class1Date = document.getElementById('class1-date-input').value;
             window.state.class2Date = document.getElementById('class2-date-input').value;
 
             closeModals();
             renderApp();
-            await window.saveToLocalDB();
-            showToast("Paramètres mis à jour.");
+            await window.saveToCloud();
+            showToast("Paramètres mis à jour sur le cloud.");
+        }
+
+        window.closeModals = function() {
+            document.getElementById('modal-flight').classList.add('hidden');
+            document.getElementById('modal-expense').classList.add('hidden');
+            document.getElementById('modal-budget').classList.add('hidden');
+            document.getElementById('modal-import-config').classList.add('hidden');
+            document.getElementById('modal-objective').classList.add('hidden');
+            document.getElementById('modal-qualif').classList.add('hidden');
+            document.getElementById('modal-bulk-edit').classList.add('hidden');
+            // Le modal-auth n'est géré que par la connexion
+        }
+
+        window.toggleInstructorField = function() {
+            const func = document.getElementById('flight-function').value;
+            const instContainer = document.getElementById('instructor-container');
+            const instInput = document.getElementById('flight-instructor');
+            if (func === 'EP') {
+                instContainer.classList.remove('hidden');
+                instInput.required = true;
+            } else {
+                instContainer.classList.add('hidden');
+                instInput.required = false;
+                instInput.value = '';
+            }
         }
 
         window.deleteFlight = async function(id) { 
@@ -1261,24 +1934,19 @@
                 const strId = id.toString();
                 window.state.flights = window.state.flights.filter(f => f.id.toString() !== strId); 
                 renderApp(); 
-                await window.saveToLocalDB();
-                showToast("Vol supprimé.");
+                await window.saveToCloud();
+                showToast("Vol supprimé du cloud.");
             }
         }
+        
         window.deleteExpense = async function(id) { 
             if(confirm("Êtes-vous sûr de vouloir supprimer cette dépense ?")) {
                 const strId = id.toString();
                 window.state.purchases = window.state.purchases.filter(p => p.id.toString() !== strId); 
                 renderApp(); 
-                await window.saveToLocalDB();
-                showToast("Dépense supprimée.");
+                await window.saveToCloud();
+                showToast("Dépense supprimée du cloud.");
             }
-        }
-
-        window.handleMonthChange = async function() {
-            window.state.selectedMonth = document.getElementById('month-selector').value;
-            renderApp();
-            await window.saveToLocalDB();
         }
 
         // --- Utils & Export CSV ---
@@ -1307,26 +1975,36 @@
         window.exportCSV = function() {
             let csvContent = "data:text/csv;charset=utf-8,";
             
-            // Partie Paramètres (Nouveau)
             csvContent += "=== PARAMETRES ===\n";
             csvContent += "Cle,Valeur\n";
             csvContent += `"monthlyLimit","${window.state.monthlyLimit}"\n`;
-            csvContent += `"sepDate","${window.state.sepDate || ''}"\n`;
             csvContent += `"class1Date","${window.state.class1Date || ''}"\n`;
             csvContent += `"class2Date","${window.state.class2Date || ''}"\n`;
 
-            // Partie Vols
+            csvContent += "\n=== QUALIFICATIONS ===\n";
+            csvContent += "ID,Titre,Expiration,SuiviSEP\n";
+            window.state.qualifications.forEach(q => {
+                let row = [q.id, q.title, q.expiryDate, q.trackSEP].map(v => `"${v}"`).join(",");
+                csvContent += row + "\n";
+            });
+
+            csvContent += "\n=== OBJECTIFS ===\n";
+            csvContent += "ID,Titre,HeuresCibles,Scope,HourType\n";
+            window.state.objectives.forEach(o => {
+                let row = [o.id, o.title, o.targetHours, o.scope || 'tagged', o.hourType || 'all'].map(v => `"${v}"`).join(",");
+                csvContent += row + "\n";
+            });
+
             csvContent += "\n=== REGISTRE DE VOLS ===\n";
-            csvContent += "Date,ATO,Immatriculation,Type,Categorie,Depart,Arrivee,Temps (h),Touches,Condition,Fonction,Instructeur,Cout (EUR),FluxId\n";
+            csvContent += "Date,ATO,Immatriculation,Type,Categorie,Depart,Arrivee,Temps (h),Touches,Condition,Fonction,Instructeur,Cout (EUR),FluxId,ObjectiveId\n";
             window.state.flights.forEach(f => {
                 let row = [
                     f.date, f.ato || '', f.reg, f.type, f.category, f.dep, f.arr, formatTime(f.duration), 
-                    f.landings, f.condition, f.function, f.instructor, f.cost, f.fluxId || ''
+                    f.landings, f.condition, f.function, f.instructor, f.cost, f.fluxId || '', f.objectiveId || ''
                 ].map(v => `"${v}"`).join(",");
                 csvContent += row + "\n";
             });
 
-            // Partie Achats
             csvContent += "\n=== ACHATS ET MATERIELS ===\n";
             csvContent += "Date,ATO,Description,Categorie,Cout (EUR),FluxId\n";
             window.state.purchases.forEach(p => {
@@ -1368,18 +2046,15 @@
                 
                 let res = { flights: 0, expenses: 0 };
                 
-                // Détection du format
                 if (text.includes('=== REGISTRE DE VOLS ===')) {
-                    // Sauvegarde AeroLog: direct import
                     res = parseBackupCSV(text);
                 } else if (text.includes('Numéro de flux') && text.includes('Compte imputé')) {
-                    // Fichier Club: ask for ATO and Format
                     window.tempImportData = text;
                     document.getElementById('import-ato-name').value = '';
                     document.getElementById('import-time-format').value = 'decimal';
                     document.getElementById('modal-import-config').classList.remove('hidden');
-                    event.target.value = ''; // Reset input
-                    return; // Pause processing until modal closes
+                    event.target.value = ''; 
+                    return; 
                 } else {
                     showToast(`Erreur: Format ignoré pour ${file.name}`);
                     continue;
@@ -1389,7 +2064,6 @@
                 totalImportedExpenses += res.expenses;
             }
             
-            // Met à jour le mois sélectionné avec le dernier apport importé si existant
             if (totalImportedExpenses > 0 || totalImportedFlights > 0) {
                  const allDates = [...window.state.purchases, ...window.state.flights].map(x => x.date).sort();
                  if (allDates.length > 0) {
@@ -1398,8 +2072,8 @@
             }
 
             renderApp();
-            await window.saveToLocalDB();
-            showToast(`${totalImportedFlights} vol(s) et ${totalImportedExpenses} apports/paramètres importés.`);
+            await window.saveToCloud();
+            showToast(`${totalImportedFlights} vol(s) importé(s) sur le Cloud.`);
             event.target.value = ''; 
         }
         
@@ -1419,8 +2093,8 @@
                      }
                 }
                 renderApp();
-                await window.saveToLocalDB();
-                showToast(`${res.flights} vol(s) et ${res.expenses} apports importés.`);
+                await window.saveToCloud();
+                showToast(`${res.flights} vols importés sur le Cloud.`);
                 window.tempImportData = null;
             }
         }
@@ -1460,7 +2134,7 @@
                 const cols = line.split(';');
                 if (cols.length < 12) continue;
 
-                const dateRaw = cols[0].split(' ')[0]; // ex: 2026-03-27
+                const dateRaw = cols[0].split(' ')[0];
                 const produit = cols[1].trim();
                 const fluxId = cols[2].trim();
                 const contrepartie = cols[4].trim();
@@ -1473,7 +2147,6 @@
 
                 let duration = parseAeroclubTime(cols[8]);
 
-                // CAS 1 : FACTURATION / VOL
                 if (duration > 0 && (produit.toLowerCase().includes('heure') || contrepartie.toLowerCase().includes('heure') || ressource !== '')) {
                     const instructor = placeDroite;
                     const isInstruction = instructor.length > 0;
@@ -1502,6 +2175,7 @@
                             reg: reg,
                             type: 'A DÉFINIR',
                             category: 'Aéroclub',
+                            objectiveId: null,
                             dep: 'LOCAL',
                             arr: 'LOCAL',
                             duration: duration,
@@ -1514,7 +2188,6 @@
                         importedFlights++;
                     }
                 } 
-                // CAS 2 : APPORT D'ARGENT
                 else if (credit > 0) {
                     let category = 'Apport Aéroclub';
                     const lowerContrepartie = contrepartie.toLowerCase();
@@ -1565,9 +2238,11 @@
                 if (!line) continue;
 
                 if (line.includes('=== PARAMETRES ===')) { mode = 'params'; continue; }
+                if (line.includes('=== QUALIFICATIONS ===')) { mode = 'qualifs'; continue; }
+                if (line.includes('=== OBJECTIFS ===')) { mode = 'objectives'; continue; }
                 if (line.includes('=== REGISTRE DE VOLS ===')) { mode = 'flights'; continue; }
                 if (line.includes('=== ACHATS ET MATERIELS ===')) { mode = 'expenses'; continue; }
-                if (line.startsWith('Date,') || line.startsWith('Cle,')) continue; 
+                if (line.startsWith('Date,') || line.startsWith('Cle,') || line.startsWith('ID,')) continue; 
 
                 const row = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/^"|"$/g, ''));
 
@@ -1575,9 +2250,27 @@
                     const key = row[0];
                     const val = row[1];
                     if (key === 'monthlyLimit') window.state.monthlyLimit = parseFloat(val) || 0;
-                    if (key === 'sepDate') window.state.sepDate = val;
                     if (key === 'class1Date') window.state.class1Date = val;
                     if (key === 'class2Date') window.state.class2Date = val;
+                }
+                else if (mode === 'qualifs' && row.length >= 4) {
+                    const id = row[0];
+                    const title = row[1];
+                    const expiry = row[2];
+                    const trackSEP = row[3] === 'true';
+                    if (!window.state.qualifications.find(q => q.id === id)) {
+                        window.state.qualifications.push({ id, title, expiryDate: expiry, trackSEP });
+                    }
+                }
+                else if (mode === 'objectives' && row.length >= 3) {
+                    const id = row[0];
+                    const title = row[1];
+                    const target = parseInt(row[2]) || 0;
+                    const scope = row[3] || 'tagged';
+                    const hourType = row[4] || 'all';
+                    if (!window.state.objectives.find(o => o.id === id)) {
+                        window.state.objectives.push({ id, title, targetHours: target, scope, hourType });
+                    }
                 }
                 else if (mode === 'flights' && row.length >= 12) {
                     const hasAto = row[1] !== '' && !row[1].match(/^[F|G]-/i) && row.length >= 13; 
@@ -1597,6 +2290,8 @@
                     const inst = hasAto ? row[11] : row[10];
                     const cost = parseFloat(hasAto ? row[12] : row[11]);
                     const fluxId = (hasAto && row.length > 13) ? row[13] : ((!hasAto && row.length > 12) ? row[12] : '');
+                    
+                    const objectiveId = (hasAto && row.length > 14) ? row[14] : null; 
 
                     const isDuplicate = window.state.flights.some(f => 
                         (f.fluxId && fluxId && f.fluxId === fluxId) || 
@@ -1612,6 +2307,7 @@
                             reg: reg,
                             type: type,
                             category: category,
+                            objectiveId: objectiveId || null,
                             dep: dep,
                             arr: arr,
                             duration: durationParsed,
